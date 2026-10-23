@@ -1,0 +1,12 @@
+node_modules/
+dist/
+coverage/
+*.log
+npm-debug.log*
+.env
+.env.*
+.DS_Store
+
+# meterd JSON-lines logs (local evidence, not committed)
+logs/
+*.jsonl

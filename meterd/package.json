@@ -1,0 +1,16 @@
+{
+  "name": "meterd",
+  "version": "0.0.0",
+  "private": true,
+  "description": "MeterNet meter daemon (week 0 skeleton)",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}

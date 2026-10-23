@@ -1,0 +1,12 @@
+# Placeholder only. This file is not runnable yet.
+# No images, ports or flags are listed because none have been verified.
+
+services:
+  fnn:
+    # TODO week 1: native Fiber Network Node on CKB testnet (image/build, config, data volume, RPC + P2P ports)
+
+  meterd:
+    # TODO week 1: build from ./meterd; needs FNN RPC URL and access to ndsctl on the host
+
+  opennds:
+    # TODO week 1: openNDS + FAS; likely needs host networking and the Wi-Fi interface, may stay on the host instead
