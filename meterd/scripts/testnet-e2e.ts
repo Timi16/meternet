@@ -10,7 +10,7 @@ import { randomBytes } from "node:crypto";
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { DeviceMeter } from "../src/device";
-import { fromHex, toHex, type Hex } from "../src/fnn";
+import { FnnRpcError, fromHex, toHex, type Hex } from "../src/fnn";
 import type { Gate } from "../src/gate";
 import { JsonlLog } from "../src/log";
 import {
@@ -38,11 +38,20 @@ async function openOrReuseChannel(boxPubkey: string): Promise<Channel> {
   }
 
   console.log(`open_channel: ${ckb(toHex(FUNDING_SHANNONS))} CKB, public=false, one_way=true`);
-  const { temporary_channel_id } = await payer.call<{ temporary_channel_id: Hex }>("open_channel", {
-    pubkey: boxPubkey,
-    funding_amount: toHex(FUNDING_SHANNONS),
-    public: false,
-    one_way: true,
+  // connect_peer returns before the peer's Init message arrives, so open_channel
+  // can fail with "feature not found" for a moment (see FIBER_NOTES.md).
+  const { temporary_channel_id } = await waitFor("peer Init", 30_000, 500, async () => {
+    try {
+      return await payer.call<{ temporary_channel_id: Hex }>("open_channel", {
+        pubkey: boxPubkey,
+        funding_amount: toHex(FUNDING_SHANNONS),
+        public: false,
+        one_way: true,
+      });
+    } catch (e) {
+      if (e instanceof FnnRpcError && e.message.includes("waiting for peer to send Init message")) return undefined;
+      throw e;
+    }
   });
   console.log(`temporary_channel_id ${temporary_channel_id}; waiting for ChannelReady (funding tx must confirm)`);
   let last = "";

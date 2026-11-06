@@ -4,11 +4,20 @@ A running log of bugs, gaps and surprises in FNN (the native Fiber Network Node)
 
 ## Bug and gap log
 
-| Date | FNN / fiber-js version | What broke or is missing | Upstream issue |
-|------|------------------------|--------------------------|----------------|
-|      |                        |                          |                |
+Pinned at kickoff: **FNN v0.9.1** (`9a561b3`, release binary `fnn_v0.9.1-aarch64-darwin-portable`, sha256 `4a330134…f63d`) and **`@nervosnetwork/fiber-js@0.9.1`**. Unpatched.
 
-_No entries yet._
+| # | Date | FNN / fiber-js version | What broke or is missing | Upstream issue |
+|---|------|------------------------|--------------------------|----------------|
+| F-001 | 2026-11-06 | FNN v0.9.1 | `open_channel` right after `connect_peer` fails: peer "feature not found, waiting for peer to send Init message" | not filed yet (draft below) |
+
+### F-001: `connect_peer` returns before the peer is ready for `open_channel`
+
+- **Setup:** two local FNN v0.9.1 nodes on testnet (macOS arm64). The payer calls `connect_peer {address: "/ip4/127.0.0.1/tcp/8228/p2p/<box peer id>"}`, which returns success, then immediately calls `open_channel {pubkey: <box>, funding_amount: 200 CKB, public: false, one_way: true}`.
+- **What happened:** `open_channel` returned JSON-RPC error `-32000`: `Invalid parameter: Peer Pubkey(0205d0d9…142a)'s feature not found, waiting for peer to send Init message`.
+- **Workaround:** retry `open_channel` every 500 ms while the error says "waiting for peer to send Init message", for up to 30 s (`meterd/scripts/testnet-e2e.ts`). The browser client will need the same retry.
+- **Draft upstream issue:**
+  > **`connect_peer` resolves before the Init exchange, so an immediate `open_channel` fails**
+  > On v0.9.1, `connect_peer` returns `null` as soon as the connection is dialed. Calling `open_channel` on that peer straight away fails with `feature not found, waiting for peer to send Init message`. Clients have to poll or retry blindly. Could `connect_peer` wait for Init (or take an option to), or could the docs say that callers should wait, for example via `list_peers`, before `open_channel`?
 
 ## Keysend (Trickle pattern) vs invoices: decision pending, week 1
 
