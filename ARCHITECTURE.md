@@ -89,13 +89,14 @@ H2 requires every one of these to end with the device cut within 15 s of exhaust
 | Field | Type | Notes |
 |-------|------|-------|
 | `ts` | string | ISO 8601 time of the log line. |
-| `event` | string | `invoice_created`, `invoice_paid`, `invoice_expired`, `usage`, `grace_started`, `cut`. |
+| `event` | string | `invoice_created`, `invoice_paid`, `invoice_expired`, `invoice_cancelled`, `gate_opened`, `grace_started`, `cut`. |
 | `device_id` | string | `sha256(per-box salt + MAC)`, hex. The raw MAC is never logged. |
 | `session_id` | string | Random ID per meter session. |
 | `invoice` | string | The encoded invoice string returned by `new_invoice`. |
 | `payment_hash` | string | Hex. |
-| `preimage` | string \| null | Hex. Written only after the invoice is `Paid`. This is testnet, and the field exists so settlement can be audited. |
-| `amount_shannons` | string | Invoice amount. `TODO(verify)`: unit and encoding as FNN reports them. |
+| `preimage` | string \| null | Hex. meterd generates it and passes it to `new_invoice`, and writes it only on the `invoice_paid` line. This is testnet, and the field exists so settlement can be audited. |
+| `hash_algorithm` | string \| null | `sha256` on invoice lines. meterd sets `hash_algorithm: "sha256"` on `new_invoice`, so `payment_hash == sha256(preimage)` can be checked with any tool. |
+| `amount_shannons` | string | Invoice amount in shannons, as a decimal string (sent to FNN as hex). |
 | `t_invoice_created_ms` | number | Epoch ms when `new_invoice` returned. |
 | `t_paid_seen_ms` | number \| null | Epoch ms when `get_invoice` first returned `Paid`. Settle latency for H1 is `t_paid_seen_ms - t_invoice_created_ms`, measured on the box. |
 | `bytes_used` | number | Cumulative bytes for the session at the time of the line. |
