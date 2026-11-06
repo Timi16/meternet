@@ -4,7 +4,7 @@ MeterNet is an open-source hotspot box, a Linux laptop or Raspberry Pi, that sel
 
 **Status: Week 1 in progress. Nothing works end to end yet.**
 
-Week 1 is in progress. The `meterd` state machine is implemented and unit-tested. FNN integration, the browser client, the gateway and openNDS integration are not built yet. There is no portal, no FNN integration, and no openNDS integration yet.
+The `meterd` state machine is implemented and unit-tested. FNN integration, the browser client, the metered gateway and openNDS integration are not built yet.
 
 ## How it works (planned)
 
