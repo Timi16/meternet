@@ -1,0 +1,12 @@
+[
+  {
+    "channel": "local: payer -> box, both nodes on one laptop",
+    "tx_hash": "0x9eb622c394fb75019ff830de3a3a8c7cc9fb1b8537f8f34251d1597ff04be9e8",
+    "payer_funding_ckb": 200
+  },
+  {
+    "channel": "public server: laptop payer (Lagos) -> server FNN (AWS eu-north-1)",
+    "tx_hash": "0x8e29626363e3181825d1d2046ac4e88db6946f4471584ae4f8bf4499aff91c7e",
+    "payer_funding_ckb": 200
+  }
+]

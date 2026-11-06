@@ -11,3 +11,4 @@ npm-debug.log*
 logs/
 *.jsonl
 !.env.example
+!evidence/**/*.jsonl
