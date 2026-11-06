@@ -10,62 +10,28 @@ import { randomBytes } from "node:crypto";
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { DeviceMeter } from "../src/device";
-import { FnnRpcClient, fromHex, toHex, type Hex } from "../src/fnn";
+import { fromHex, toHex, type Hex } from "../src/fnn";
 import type { Gate } from "../src/gate";
 import { JsonlLog } from "../src/log";
+import {
+  box,
+  ckb,
+  env,
+  LOG_DIR,
+  payer,
+  PRICE_SHANNONS,
+  readyOneWayChannel,
+  waitFor,
+  type Channel,
+  type NodeInfo,
+  type Payment,
+} from "./lib";
 
-const env = (k: string, d?: string) => {
-  const v = process.env[k] ?? d;
-  if (v === undefined) throw new Error(`missing env ${k}`);
-  return v;
-};
-
-const box = new FnnRpcClient(env("BOX_RPC", "http://127.0.0.1:8227"));
-const payer = new FnnRpcClient(env("PAYER_RPC", "http://127.0.0.1:8237"));
 const BOX_P2P_ADDR = env("BOX_P2P_ADDR");
 const FUNDING_SHANNONS = BigInt(env("FUNDING_CKB", "200")) * 100_000_000n;
-const PRICE_SHANNONS = BigInt(env("CHUNK_PRICE_SHANNONS", "10000000"));
-const LOG_DIR = env("LOG_DIR", join(import.meta.dirname, "..", "..", "logs"));
 
-interface NodeInfo {
-  pubkey: string;
-  version: string;
-}
-interface Channel {
-  channel_id: Hex;
-  pubkey: string;
-  is_one_way: boolean;
-  is_public: boolean;
-  channel_outpoint: unknown;
-  state: { state_name: string };
-  local_balance: Hex;
-  remote_balance: Hex;
-}
-interface Payment {
-  payment_hash: Hex;
-  status: "Created" | "Inflight" | "Success" | "Failed";
-  failed_error?: string | null;
-  fee: Hex;
-}
-
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-const ckb = (h: Hex) => Number(fromHex(h)) / 1e8;
-
-async function waitFor<T>(what: string, timeoutMs: number, everyMs: number, f: () => Promise<T | undefined>): Promise<T> {
-  const until = Date.now() + timeoutMs;
-  for (;;) {
-    const v = await f();
-    if (v !== undefined) return v;
-    if (Date.now() > until) throw new Error(`timed out waiting for ${what}`);
-    await sleep(everyMs);
-  }
-}
-
-async function readyChannel(boxPubkey: string): Promise<Channel> {
-  const list = async () =>
-    (await payer.call<{ channels: Channel[] }>("list_channels", { pubkey: boxPubkey })).channels;
-
-  const existing = (await list()).find((c) => c.state.state_name === "ChannelReady" && c.is_one_way);
+async function openOrReuseChannel(boxPubkey: string): Promise<Channel> {
+  const existing = await readyOneWayChannel(payer, boxPubkey);
   if (existing) {
     console.log(`reusing channel ${existing.channel_id}`);
     return existing;
@@ -81,10 +47,10 @@ async function readyChannel(boxPubkey: string): Promise<Channel> {
   console.log(`temporary_channel_id ${temporary_channel_id}; waiting for ChannelReady (funding tx must confirm)`);
   let last = "";
   return waitFor("ChannelReady", 15 * 60_000, 3_000, async () => {
-    const chans = await list();
-    const states = chans.map((c) => c.state.state_name).join(",");
+    const { channels } = await payer.call<{ channels: Channel[] }>("list_channels", { pubkey: boxPubkey });
+    const states = channels.map((c) => c.state.state_name).join(",");
     if (states !== last) console.log(`  channel states: ${states || "(none)"}`), (last = states);
-    return chans.find((c) => c.state.state_name === "ChannelReady" && c.is_one_way);
+    return channels.find((c) => c.state.state_name === "ChannelReady" && c.is_one_way);
   });
 }
 
@@ -95,7 +61,7 @@ async function main() {
   console.log(`payer ${payerInfo.version} ${payerInfo.pubkey}`);
 
   await payer.call("connect_peer", { address: BOX_P2P_ADDR });
-  const channel = await readyChannel(boxInfo.pubkey);
+  const channel = await openOrReuseChannel(boxInfo.pubkey);
   console.log(`channel ${channel.channel_id} outpoint ${JSON.stringify(channel.channel_outpoint)}`);
   console.log(`payer side: local ${ckb(channel.local_balance)} CKB, remote ${ckb(channel.remote_balance)} CKB`);
 
