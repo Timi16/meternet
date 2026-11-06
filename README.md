@@ -2,9 +2,9 @@
 
 MeterNet is an open-source hotspot box, a Linux laptop or Raspberry Pi, that sells Wi-Fi by the megabyte over the [Fiber Network](https://github.com/nervosnetwork/fiber) on Nervos CKB **testnet**. A phone joins the hotspot, opens a captive-portal page that runs a Fiber node in the browser, opens a private one-way channel to the box, and pays for data in 2 MB chunks. The phone stays online only while those small payments keep arriving. If they stop, the box cuts the phone off within a 15-second grace window. The box runs openNDS (captive portal) with a forwarding auth service (FAS), a native Fiber Network Node (FNN), and `meterd`, a small TypeScript daemon that turns paid invoices into byte allowances.
 
-**Status: Week 0: skeleton only. Nothing works yet.**
+**Status: Week 1 in progress. Nothing works end to end yet.**
 
-This repo currently has documentation and a state-machine skeleton for `meterd` with two tests. One of them fails on purpose, because the grace-to-cut transition isn't written yet. There is no portal, no FNN integration, and no openNDS integration yet.
+Week 1 is in progress. The `meterd` state machine is implemented and unit-tested. FNN integration, the browser client, the gateway and openNDS integration are not built yet. There is no portal, no FNN integration, and no openNDS integration yet.
 
 ## How it works (planned)
 
@@ -58,7 +58,7 @@ docker-compose.yml   placeholder, not runnable yet
 ```sh
 cd meterd
 npm install
-npm test   # expected at week 0: 1 passed, 1 failed
+npm test
 ```
 
 ## Links

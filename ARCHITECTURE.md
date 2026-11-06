@@ -16,15 +16,21 @@ Status: week 0. This document describes the planned design. Nothing here is impl
 ### meterd session states
 
 ```
-unpaid --PAYMENT_CONFIRMED--> active --USAGE_UPDATE(used >= allowance)--> grace
-grace  --PAYMENT_CONFIRMED--> active
-grace  --TICK(now - graceStart >= 15 s)--> cut     (not implemented yet; the failing test covers it)
+idle             --INVOICE_ISSUED-->                       awaiting_payment
+awaiting_payment --INVOICE_CLOSED (last pending)-->        idle
+awaiting_payment --PAYMENT_CONFIRMED-->                    paid
+paid             --USAGE_UPDATE(used >= allowance)-->      grace
+grace            --PAYMENT_CONFIRMED-->                    paid
+grace            --TICK(now - graceStart >= 15 s)-->       cut
 ```
 
-- `unpaid`: no allowance yet. The device is in the walled garden only.
-- `active`: usage is below the paid allowance.
+- `idle`: no allowance and no invoice outstanding. The device is in the walled garden only.
+- `awaiting_payment`: the first invoice has been issued but not paid. Still walled off.
+- `paid`: usage is below the paid allowance. Once half a chunk (1 MB) is left, meterd issues the next invoice early, so a device that keeps paying never reaches grace.
 - `grace`: usage has reached the allowance. A payment has up to `GRACE_MS = 15000` to land.
-- `cut`: `meterd` has run (or will run) `ndsctl deauth <mac>`. Terminal for now. Whether a cut device can pay its way back in on the same session is decided in week 1.
+- `cut`: the gate is closed (`ndsctl deauth <mac>` on the box). Terminal: a payment that lands late is ignored, and a returning device starts a new session.
+
+A payment only counts if its payment hash belongs to an invoice meterd issued for that device.
 
 Each chunk is `CHUNK_BYTES = 2 * 1024 * 1024`.
 
