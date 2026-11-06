@@ -4,7 +4,7 @@ MeterNet is an open-source hotspot box, a Linux laptop or Raspberry Pi, that sel
 
 **Status: Week 1 in progress. Nothing works end to end yet.**
 
-`meterd` has its state machine, an FNN JSON-RPC client and a per-device meter loop, all tested against a mocked FNN. One real testnet chunk payment has gone through between two local FNN v0.9.1 nodes. The browser client, the metered gateway, the public server and openNDS integration are not built yet.
+`meterd` has its state machine, an FNN JSON-RPC client and a per-device meter loop, all tested against a mocked FNN. FNN v0.9.1 and meterd run on the public server (AWS eu-north-1, installed with [deploy/server/install-fnn.sh](deploy/server/install-fnn.sh)). One real testnet chunk payment has gone through it end to end, from a payer node in Lagos. The browser client, the metered gateway, the public wss endpoint and openNDS integration are not built yet.
 
 ## How it works (planned)
 
