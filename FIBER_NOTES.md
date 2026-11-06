@@ -9,6 +9,7 @@ Pinned at kickoff: **FNN v0.9.1** (`9a561b3`, release binary `fnn_v0.9.1-aarch64
 | # | Date | FNN / fiber-js version | What broke or is missing | Upstream issue |
 |---|------|------------------------|--------------------------|----------------|
 | F-001 | 2026-11-06 | FNN v0.9.1 | `open_channel` right after `connect_peer` fails: peer "feature not found, waiting for peer to send Init message" | not filed yet (draft below) |
+| F-002 | 2026-11-06 | FNN v0.9.1 | A one-way channel locks ~99 CKB from each side that neither can spend; the auto-accepting box adds 99 CKB it can never send | question, not filed yet (draft below) |
 
 ### F-001: `connect_peer` returns before the peer is ready for `open_channel`
 
@@ -19,16 +20,43 @@ Pinned at kickoff: **FNN v0.9.1** (`9a561b3`, release binary `fnn_v0.9.1-aarch64
   > **`connect_peer` resolves before the Init exchange, so an immediate `open_channel` fails**
   > On v0.9.1, `connect_peer` returns `null` as soon as the connection is dialed. Calling `open_channel` on that peer straight away fails with `feature not found, waiting for peer to send Init message`. Clients have to poll or retry blindly. Could `connect_peer` wait for Init (or take an option to), or could the docs say that callers should wait, for example via `list_peers`, before `open_channel`?
 
-## Keysend (Trickle pattern) vs invoices: decision pending, week 1
+### F-002: Capacity locked by a one-way channel
 
-The current design uses **one invoice per 2 MB chunk**. `meterd` calls `new_invoice`, the phone pays it with `send_payment`, and `meterd` polls `get_invoice` until `Paid`. Every chunk has a `payment_hash` that `meterd` created, so it is clear which device paid for what.
+- **Setup:** the payer runs `open_channel {funding_amount: 200 CKB, public: false, one_way: true}` to the box. The box uses the default testnet config (`open_channel_auto_accept_min_ckb_funding_amount` 100 CKB, `auto_accept_channel_ckb_funding_amount` 99 CKB).
+- **What happened:** funding tx [`0x9eb622c3…be9e8`](https://pudge.explorer.nervos.org/transaction/0x9eb622c394fb75019ff830de3a3a8c7cc9fb1b8537f8f34251d1597ff04be9e8) has a **299 CKB** funding cell (200 from the payer, 99 from the box). After one 0.1 CKB payment, `list_channels` shows payer local 100.9 / box local 0.1. So about 99 CKB per side is held back, and the payer could only ever spend 101 of its 200 CKB.
+- **Why it matters:** for H3, the box ties up 99 CKB per user channel even though it can't send on a one-way channel. For users, a phone needs more than 100 CKB just to open a channel. `TODO(verify)`: that the ~99 CKB per side is the reserved occupied capacity for each party's settlement cell. I'm inferring this from the balances; I haven't found it in the docs.
+- **Workaround:** none needed for week 1. Budget it: box liquidity ≈ 99 CKB × channels. Check whether the box can accept one-way channels without contributing funds.
+- **Draft upstream question:**
+  > **How much capacity does a one-way channel lock, and must the acceptor contribute?**
+  > On v0.9.1 with the default testnet config, a 200 CKB `one_way: true` channel produced a 299 CKB funding cell. The auto-accepting peer added 99 CKB, and the funder can spend only ~101 CKB. Is ~99 CKB per side the reserved settlement-cell capacity? Since the acceptor can never send on a one-way channel, can it accept without contributing?
 
-The alternative is a **keysend / Trickle pattern**: the phone pushes payments to the box without first asking for an invoice. That would cut one round trip per chunk.
+## Keysend (Trickle pattern) vs invoices: decided week 1 (2026-11-06)
 
-Open questions to answer in week 1, before choosing:
+**Decision: keep one invoice per 2 MB chunk.** Keysend works on FNN v0.9.1, but it is no faster in our test, and it would weaken the per-device attribution and the preimage evidence the report depends on.
 
-- Does `send_payment` support keysend in the FNN and fiber-js versions we target, and what parameter enables it? `TODO(verify)`
-- How would `meterd` see an incoming keysend payment and link it to a device, using only the RPC methods listed in ARCHITECTURE.md? If that isn't possible, keysend would need a method outside that list, and we would have to verify one first.
-- What is the measured latency difference against H1 (≥95% settle in <5 s)?
+### What was compared
 
-Decision: **pending**.
+The trial used Trickle's pattern (one keysend `send_payment` per tick) on plain FNN, without Trickle's library.
+
+- **Invoice:** meterd calls `new_invoice` with `hash_algorithm: "sha256"` and its own random preimage. The payer calls `send_payment {invoice}`. The box polls `get_invoice` until `Paid`.
+- **Keysend:** the payer calls `send_payment {target_pubkey: <box>, amount, keysend: true}`. The box has no RPC that reports an incoming keysend payment, so it polls `list_channels` until that channel's `local_balance` rises by the chunk price.
+
+### Result
+
+`meterd/scripts/payment-trial.ts`, 2026-11-06. Two local FNN v0.9.1 nodes on testnet (macOS arm64), one private one-way channel, 0.1 CKB per chunk, 20 runs per mode, alternating, polling every 100 ms. Latency is measured from `send_payment` to the box being able to credit the chunk.
+
+| Mode | OK | p50 | p95 | max | < 5 s |
+|------|----|-----|-----|-----|-------|
+| invoice | 20/20 | 107 ms | 117 ms | 118 ms | 20/20 |
+| keysend | 20/20 | 106 ms | 109 ms | 111 ms | 20/20 |
+
+Raw lines: `logs/trial-2026-11-06T11-04-09-168Z.jsonl`, not committed; to be published with the other logs. **These are not H1 numbers.** Both nodes ran on one laptop over localhost, and the 100 ms poll interval dominates the figures. Real phone and 4G latency is measured from week 2.
+
+### Why invoices
+
+1. **Same speed.** The two modes are within the poll resolution. Keysend's real saving is the invoice round trip, and meterd already hides that by fetching the next invoice when 1 MB of allowance is left.
+2. **Evidence.** With invoices, meterd creates the preimage, so every log line carries a preimage with `sha256(preimage) == payment_hash`, which `meternet verify logs/` can check. With keysend, only the payer learns the preimage (`send_payment` / `get_payment` return it to the sender). The box would have to trust the phone to report it.
+3. **Attribution.** An invoice's `payment_hash` belongs to exactly one device and chunk. Keysend is only visible as a balance change on a channel, so it needs exactly one channel per device and still can't say which payment arrived. Trickle's README notes the same limitation: the receiver has no view of incoming keysend.
+4. **Allowed methods only.** The invoice path needs `new_invoice` and `get_invoice`. Detecting keysend works through `list_channels`, but only as a balance heuristic.
+
+**Revisit if:** field latency in weeks 2–5 shows that fetching the next invoice measurably hurts H1, or a later FNN release adds a receiver-side view of keysend payments.
