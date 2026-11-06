@@ -10,3 +10,4 @@ npm-debug.log*
 # meterd JSON-lines logs (local evidence, not committed)
 logs/
 *.jsonl
+!.env.example

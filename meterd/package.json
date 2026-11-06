@@ -7,10 +7,12 @@
   "type": "module",
   "scripts": {
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "e2e": "tsx scripts/testnet-e2e.ts"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",
+    "tsx": "^4.23.15",
     "typescript": "^5.6.0",
     "vitest": "^2.1.0"
   }
