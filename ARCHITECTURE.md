@@ -43,7 +43,7 @@ The proposal promises that access closes within 15 s once payment stops. meterd 
 | Closing the gate | ≤ 1 s | To be measured on the box in the week-3 failure lab. |
 | Margin | ≈ 2 s | |
 
-If the failure lab measures more than this for detection plus closing, `GRACE_MS` comes down, not the deadline. Usage that arrives late from `ndsctl json` polling makes the device overshoot its allowance a little. It does not move the deadline, because the clock starts from the reading that shows exhaustion.
+meterd fails closed. If closing the gate fails, it logs a `gate_close_failed` line for each attempt and retries, starting at 500 ms and doubling to a 5 s cap, until the close succeeds. The `cut` line is written only then, so a slow or failed close shows up in H2 and is never hidden. If the failure lab measures more than this for detection plus closing, `GRACE_MS` comes down, not the deadline. Usage that arrives late from `ndsctl json` polling makes the device overshoot its allowance a little. It does not move the deadline, because the clock starts from the reading that shows exhaustion.
 
 Each chunk is `CHUNK_BYTES = 2 * 1024 * 1024`.
 
@@ -103,7 +103,7 @@ H2 requires every one of these to end with `t_gate_closed_ms - t_exhausted_ms` �
 | Field | Type | Notes |
 |-------|------|-------|
 | `ts` | string | ISO 8601 time of the log line. |
-| `event` | string | `invoice_created`, `invoice_paid`, `invoice_expired`, `invoice_cancelled`, `gate_opened`, `grace_started`, `cut`. |
+| `event` | string | `invoice_created`, `invoice_paid`, `invoice_expired`, `invoice_cancelled`, `gate_opened`, `grace_started`, `gate_close_failed`, `cut`. |
 | `device_id` | string | `sha256(per-box salt + MAC)`, hex. The raw MAC is never logged. |
 | `session_id` | string | Random ID per meter session. |
 | `invoice` | string | The encoded invoice string returned by `new_invoice`. |
@@ -116,8 +116,9 @@ H2 requires every one of these to end with `t_gate_closed_ms - t_exhausted_ms` �
 | `bytes_used` | number | Cumulative bytes for the session at the time of the line. |
 | `allowance_bytes` | number | Cumulative paid allowance at the time of the line. |
 | `t_exhausted_ms` | number \| null | On `grace_started` and `cut` lines: epoch ms of the usage reading that showed the allowance used up. |
-| `t_gate_closed_ms` | number \| null | On `cut` lines: epoch ms when the gate close returned. Null if the close failed. H2 is `t_gate_closed_ms - t_exhausted_ms` ≤ 15000. |
+| `t_gate_closed_ms` | number \| null | On `cut` lines: epoch ms when the gate close succeeded. H2 is `t_gate_closed_ms - t_exhausted_ms` ≤ 15000. |
 | `cutoff_reason` | string \| null | Set only on `cut` lines. For example `grace_expired`. |
+| `error` | string \| null | Set only on `gate_close_failed` lines: what the gate (`ndsctl deauth` or the gateway) reported. |
 
 Example line (the shape only, not real data):
 

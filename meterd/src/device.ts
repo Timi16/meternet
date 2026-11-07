@@ -10,6 +10,10 @@ import type { LogEntry, MeterLog } from "./log";
 import { cutDueAtMs, initialSession, needsInvoice, step, type MeterEvent, type MeterSession } from "./meter";
 
 export const INVOICE_EXPIRY_SEC = 120;
+// A failed gate close is retried until it succeeds: fail closed, never leave
+// a cut device online. Backoff doubles from the first delay up to the cap.
+export const GATE_RETRY_FIRST_MS = 500;
+export const GATE_RETRY_MAX_MS = 5_000;
 
 export interface MeterDeps {
   fnn: FnnClient;
@@ -106,23 +110,18 @@ export class DeviceMeter {
     const before = this.session.state;
     this.apply({ type: "TICK", nowMs: this.deps.now() });
     if (before !== "cut" && this.session.state === "cut") {
-      let closedAtMs: number | null = null;
-      try {
-        if (this.gateOpen) {
-          this.gateOpen = false;
-          await this.deps.gate.close(this.deviceKey);
-        }
-        closedAtMs = this.deps.now();
-      } finally {
-        // Written after the close returns, so t_gate_closed_ms is when access
-        // actually ended. It stays null if the close threw.
-        this.write({
-          event: "cut",
-          cutoff_reason: this.session.cutReason,
-          t_exhausted_ms: this.session.graceStartedAtMs,
-          t_gate_closed_ms: closedAtMs,
-        });
+      if (this.gateOpen) {
+        this.gateOpen = false;
+        await this.closeGateUntilClosed();
       }
+      // Written after the close succeeds, so t_gate_closed_ms is when access
+      // actually ended.
+      this.write({
+        event: "cut",
+        cutoff_reason: this.session.cutReason,
+        t_exhausted_ms: this.session.graceStartedAtMs,
+        t_gate_closed_ms: this.deps.now(),
+      });
     }
   }
 
@@ -156,6 +155,24 @@ export class DeviceMeter {
       this.gateOpen = true;
       await this.deps.gate.open(this.deviceKey);
       this.write({ event: "gate_opened" });
+    }
+  }
+
+  private async closeGateUntilClosed(): Promise<void> {
+    for (let delay = GATE_RETRY_FIRST_MS; ; delay = Math.min(delay * 2, GATE_RETRY_MAX_MS)) {
+      try {
+        await this.deps.gate.close(this.deviceKey);
+        return;
+      } catch (err) {
+        // One line per failed attempt, so a crash mid-retry still leaves
+        // evidence that the cut was due and the gate would not close.
+        this.write({
+          event: "gate_close_failed",
+          t_exhausted_ms: this.session.graceStartedAtMs,
+          error: err instanceof Error ? err.message : String(err),
+        });
+        await new Promise<void>((r) => (this.deps.schedule ?? defaultSchedule)(delay, r));
+      }
     }
   }
 

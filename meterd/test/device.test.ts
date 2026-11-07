@@ -3,7 +3,7 @@ import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { DeviceMeter } from "../src/device";
+import { DeviceMeter, GATE_RETRY_FIRST_MS, GATE_RETRY_MAX_MS } from "../src/device";
 import { FnnRpcClient } from "../src/fnn";
 import type { Gate } from "../src/gate";
 import { JsonlLog, MemoryLog } from "../src/log";
@@ -219,18 +219,51 @@ describe("DeviceMeter", () => {
     expect(cut.t_gate_closed_ms! - cut.t_exhausted_ms!).toBe(GRACE_MS + 700);
   });
 
-  it("still logs the cut, with no gate-closed time, if closing the gate fails", async () => {
+  it("keeps retrying a failed gate close with backoff, logging each failure", async () => {
+    let failures = 2;
+    gate.close = async (key) => {
+      if (failures-- > 0) throw new Error("ndsctl deauth failed");
+      gate.calls.push(`close ${key}`);
+    };
+    await meter.requestChunk();
+    await payOpenInvoices();
+    nowMs = 5_000;
+    meter.usage(CHUNK_BYTES);
+    nowMs += GRACE_MS;
+    const cutting = meter.tick();
+    await new Promise((r) => setImmediate(r));
+
+    const failed = () => log.lines.filter((l) => l.event === "gate_close_failed");
+    expect(failed()).toHaveLength(1);
+    expect(failed()[0]!.error).toContain("ndsctl deauth failed");
+    expect(log.lines.some((l) => l.event === "cut")).toBe(false);
+    expect(timers.armed.map((t) => t.at - nowMs)).toEqual([GATE_RETRY_FIRST_MS]);
+
+    await timers.fireNext(); // 2nd attempt fails, backoff doubles
+    expect(failed()).toHaveLength(2);
+    expect(timers.armed.map((t) => t.at - nowMs)).toEqual([2 * GATE_RETRY_FIRST_MS]);
+
+    await timers.fireNext(); // 3rd attempt closes
+    await cutting;
+    expect(gate.calls.at(-1)).toBe(`close ${MAC}`);
+    const cut = log.lines.find((l) => l.event === "cut")!;
+    expect(cut.t_exhausted_ms).toBe(5_000);
+    expect(cut.t_gate_closed_ms).toBe(5_000 + GRACE_MS + 3 * GATE_RETRY_FIRST_MS);
+    expect(cut.error).toBeNull();
+  });
+
+  it("caps the retry backoff", async () => {
     gate.close = async () => {
-      throw new Error("ndsctl deauth failed");
+      throw new Error("down");
     };
     await meter.requestChunk();
     await payOpenInvoices();
     meter.usage(CHUNK_BYTES);
     nowMs += GRACE_MS;
-    await expect(meter.tick()).rejects.toThrow("ndsctl deauth failed");
-    const cut = log.lines.find((l) => l.event === "cut")!;
-    expect(cut.t_exhausted_ms).not.toBeNull();
-    expect(cut.t_gate_closed_ms).toBeNull();
+    void meter.tick();
+    await new Promise((r) => setImmediate(r));
+    for (let i = 0; i < 12; i++) await timers.fireNext();
+    expect(timers.armed.map((t) => t.at - nowMs)).toEqual([GATE_RETRY_MAX_MS]);
   });
 
   it("disarms the deadline when a payment lands during grace", async () => {

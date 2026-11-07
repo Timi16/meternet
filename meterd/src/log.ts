@@ -10,6 +10,7 @@ export type LogEvent =
   | "invoice_cancelled"
   | "gate_opened"
   | "grace_started"
+  | "gate_close_failed"
   | "cut";
 
 export interface LogLine {
@@ -31,6 +32,8 @@ export interface LogLine {
   bytes_used: number;
   allowance_bytes: number;
   cutoff_reason: CutReason | null;
+  // On gate_close_failed lines: what the gate reported.
+  error: string | null;
 }
 
 // Fields every line must carry; the rest default to null.
@@ -53,6 +56,7 @@ export function toLine(entry: LogEntry): LogLine {
     t_exhausted_ms: null,
     t_gate_closed_ms: null,
     cutoff_reason: null,
+    error: null,
     ...entry,
     ts: entry.ts ?? new Date().toISOString(),
   };
