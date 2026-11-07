@@ -21,16 +21,29 @@ awaiting_payment --INVOICE_CLOSED (last pending)-->        idle
 awaiting_payment --PAYMENT_CONFIRMED-->                    paid
 paid             --USAGE_UPDATE(used >= allowance)-->      grace
 grace            --PAYMENT_CONFIRMED-->                    paid
-grace            --TICK(now - graceStart >= 15 s)-->       cut
+grace            --TICK(now - graceStart >= GRACE_MS)-->   cut
 ```
 
 - `idle`: no allowance and no invoice outstanding. The device is in the walled garden only.
 - `awaiting_payment`: the first invoice has been issued but not paid. Still walled off.
 - `paid`: usage is below the paid allowance. Once half a chunk (1 MB) is left, meterd issues the next invoice early, so a device that keeps paying never reaches grace.
-- `grace`: usage has reached the allowance. A payment has up to `GRACE_MS = 15000` to land.
+- `grace`: usage has reached the allowance. A payment has up to `GRACE_MS = 12000` to land (see "Cutoff budget").
 - `cut`: the gate is closed (`ndsctl deauth <mac>` on the box). Terminal: a payment that lands late is ignored, and a returning device starts a new session.
 
 A payment only counts if its payment hash belongs to an invoice meterd issued for that device.
+
+### Cutoff budget
+
+The proposal promises that access closes within 15 s once payment stops. meterd treats that as an end-to-end deadline, `CUTOFF_DEADLINE_MS = 15000`, measured from `t_exhausted_ms` (the usage reading that shows the allowance used up) to `t_gate_closed_ms` (when `ndsctl deauth` or the gateway close has returned). Both are on every `cut` log line, and H2 is computed from them.
+
+| Part of the 15 s | Budget | How it is kept |
+|---|---|---|
+| Grace: time for a late payment to land | 12 s (`GRACE_MS`) | |
+| Detecting that grace ran out | ≈ 0 | A timer is armed for the exact deadline when grace starts. The periodic `tick()` is only a backstop. The cut never waits on an FNN call. |
+| Closing the gate | ≤ 1 s | To be measured on the box in the week-3 failure lab. |
+| Margin | ≈ 2 s | |
+
+If the failure lab measures more than this for detection plus closing, `GRACE_MS` comes down, not the deadline. Usage that arrives late from `ndsctl json` polling makes the device overshoot its allowance a little. It does not move the deadline, because the clock starts from the reading that shows exhaustion.
 
 Each chunk is `CHUNK_BYTES = 2 * 1024 * 1024`.
 
@@ -60,18 +73,19 @@ sequenceDiagram
         N-->>M: per-client bytes
         M->>M: USAGE_UPDATE(bytes)
     end
-    Note over M: used >= allowance, so enter grace and start the 15 s timer
-    alt next payment lands within 15 s
-        M->>M: PAYMENT_CONFIRMED, back to active
-    else no payment within 15 s
-        M->>M: TICK, grace expired, so cut
+    Note over M: used >= allowance: enter grace, arm a timer for GRACE_MS (12 s)
+    alt next payment lands within grace
+        M->>M: PAYMENT_CONFIRMED, back to paid, timer disarmed
+    else no payment within grace
+        M->>M: timer fires, grace expired, so cut
         M->>N: ndsctl deauth <mac>
+        Note over M: log cut with t_exhausted_ms and t_gate_closed_ms (≤ 15 s apart)
     end
 ```
 
 ## Failure scenarios
 
-H2 requires every one of these to end with the device cut within 15 s of exhausting its allowance, across 3 runs each. None has been tested yet.
+H2 requires every one of these to end with `t_gate_closed_ms - t_exhausted_ms` ≤ 15 s, across 3 runs each. None has been tested yet.
 
 | # | Scenario | What should happen |
 |---|----------|--------------------|
@@ -101,12 +115,14 @@ H2 requires every one of these to end with the device cut within 15 s of exhaust
 | `t_paid_seen_ms` | number \| null | Epoch ms when `get_invoice` first returned `Paid`. Settle latency for H1 is `t_paid_seen_ms - t_invoice_created_ms`, measured on the box. |
 | `bytes_used` | number | Cumulative bytes for the session at the time of the line. |
 | `allowance_bytes` | number | Cumulative paid allowance at the time of the line. |
+| `t_exhausted_ms` | number \| null | On `grace_started` and `cut` lines: epoch ms of the usage reading that showed the allowance used up. |
+| `t_gate_closed_ms` | number \| null | On `cut` lines: epoch ms when the gate close returned. Null if the close failed. H2 is `t_gate_closed_ms - t_exhausted_ms` ≤ 15000. |
 | `cutoff_reason` | string \| null | Set only on `cut` lines. For example `grace_expired`. |
 
 Example line (the shape only, not real data):
 
 ```json
-{"ts":"…","event":"invoice_paid","device_id":"…","session_id":"…","invoice":"…","payment_hash":"0x…","preimage":"0x…","amount_shannons":"…","t_invoice_created_ms":0,"t_paid_seen_ms":0,"bytes_used":0,"allowance_bytes":2097152,"cutoff_reason":null}
+{"ts":"…","event":"invoice_paid","device_id":"…","session_id":"…","invoice":"…","payment_hash":"0x…","preimage":"0x…","amount_shannons":"…","t_invoice_created_ms":0,"t_paid_seen_ms":0,"t_exhausted_ms":null,"t_gate_closed_ms":null,"bytes_used":0,"allowance_bytes":2097152,"cutoff_reason":null}
 ```
 
 ## FNN RPC methods used

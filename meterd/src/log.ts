@@ -24,6 +24,10 @@ export interface LogLine {
   amount_shannons: string | null;
   t_invoice_created_ms: number | null;
   t_paid_seen_ms: number | null;
+  // H2: on grace_started and cut lines, when usage reached the allowance and
+  // (cut only) when the gate close returned.
+  t_exhausted_ms: number | null;
+  t_gate_closed_ms: number | null;
   bytes_used: number;
   allowance_bytes: number;
   cutoff_reason: CutReason | null;
@@ -46,6 +50,8 @@ export function toLine(entry: LogEntry): LogLine {
     amount_shannons: null,
     t_invoice_created_ms: null,
     t_paid_seen_ms: null,
+    t_exhausted_ms: null,
+    t_gate_closed_ms: null,
     cutoff_reason: null,
     ...entry,
     ts: entry.ts ?? new Date().toISOString(),

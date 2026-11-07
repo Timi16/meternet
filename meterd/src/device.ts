@@ -7,7 +7,7 @@ import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { toHex, type FnnClient, type Hex } from "./fnn";
 import type { Gate } from "./gate";
 import type { LogEntry, MeterLog } from "./log";
-import { initialSession, needsInvoice, step, type MeterEvent, type MeterSession } from "./meter";
+import { cutDueAtMs, initialSession, needsInvoice, step, type MeterEvent, type MeterSession } from "./meter";
 
 export const INVOICE_EXPIRY_SEC = 120;
 
@@ -19,6 +19,14 @@ export interface MeterDeps {
   chunkPriceShannons: bigint;
   // Per-box secret so hashed device IDs can't be reversed by brute-forcing MACs.
   deviceSalt: string;
+  // Runs fn after delayMs and returns a cancel function. Defaults to setTimeout.
+  schedule?: (delayMs: number, fn: () => void) => () => void;
+}
+
+function defaultSchedule(delayMs: number, fn: () => void): () => void {
+  const t = setTimeout(fn, delayMs);
+  t.unref();
+  return () => clearTimeout(t);
 }
 
 interface IssuedInvoice {
@@ -40,6 +48,8 @@ export class DeviceMeter {
   // Serialises requestChunk() and poll(): two overlapping calls would otherwise
   // issue duplicate invoices or credit the same payment twice.
   private busy: Promise<unknown> = Promise.resolve();
+  // The armed cut-deadline timer, if any. tick() on a timer stays as a backstop.
+  private deadline: { dueAtMs: number; cancel: () => void } | null = null;
 
   constructor(
     private readonly deps: MeterDeps,
@@ -85,17 +95,33 @@ export class DeviceMeter {
   usage(bytes: number): void {
     const before = this.session.state;
     this.apply({ type: "USAGE_UPDATE", bytes, nowMs: this.deps.now() });
-    if (before !== "grace" && this.session.state === "grace") this.write({ event: "grace_started" });
+    if (before !== "grace" && this.session.state === "grace") {
+      this.write({ event: "grace_started", t_exhausted_ms: this.session.graceStartedAtMs });
+    }
   }
 
+  // Deliberately not serialised with poll(): a hung FNN call must never
+  // delay a cut.
   async tick(): Promise<void> {
     const before = this.session.state;
     this.apply({ type: "TICK", nowMs: this.deps.now() });
     if (before !== "cut" && this.session.state === "cut") {
-      this.write({ event: "cut", cutoff_reason: this.session.cutReason });
-      if (this.gateOpen) {
-        this.gateOpen = false;
-        await this.deps.gate.close(this.deviceKey);
+      let closedAtMs: number | null = null;
+      try {
+        if (this.gateOpen) {
+          this.gateOpen = false;
+          await this.deps.gate.close(this.deviceKey);
+        }
+        closedAtMs = this.deps.now();
+      } finally {
+        // Written after the close returns, so t_gate_closed_ms is when access
+        // actually ended. It stays null if the close threw.
+        this.write({
+          event: "cut",
+          cutoff_reason: this.session.cutReason,
+          t_exhausted_ms: this.session.graceStartedAtMs,
+          t_gate_closed_ms: closedAtMs,
+        });
       }
     }
   }
@@ -141,6 +167,23 @@ export class DeviceMeter {
 
   private apply(e: MeterEvent): void {
     this.session = step(this.session, e);
+    this.syncDeadline();
+  }
+
+  // Keeps exactly one timer armed for the grace deadline while in grace.
+  private syncDeadline(): void {
+    const due = cutDueAtMs(this.session);
+    if (this.deadline && this.deadline.dueAtMs === due) return;
+    this.deadline?.cancel();
+    this.deadline = null;
+    if (due === null) return;
+    const schedule = this.deps.schedule ?? defaultSchedule;
+    const cancel = schedule(Math.max(0, due - this.deps.now()), () => {
+      this.deadline = null;
+      // If the timer fired early, tick() leaves us in grace and re-arms.
+      this.tick().catch((err) => console.error(`meterd: cut failed for ${this.deviceId}:`, err));
+    });
+    this.deadline = { dueAtMs: due, cancel };
   }
 
   private invoiceFields(hash: Hex): Partial<LogEntry> {

@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   CHUNK_BYTES,
+  CUTOFF_DEADLINE_MS,
+  cutDueAtMs,
   GRACE_MS,
   initialSession,
   needsInvoice,
@@ -124,6 +126,18 @@ describe("meter", () => {
     expect(s.graceStartedAtMs).toBe(1_900);
     expect(step(s, { type: "TICK", nowMs: 1_000 + GRACE_MS }).state).toBe("grace");
     expect(step(s, { type: "TICK", nowMs: 1_900 + GRACE_MS }).state).toBe("cut");
+  });
+
+  it("budgets grace inside the 15 s cutoff deadline, leaving room to detect and close", () => {
+    expect(CUTOFF_DEADLINE_MS).toBe(15_000);
+    expect(GRACE_MS + 3_000).toBeLessThanOrEqual(CUTOFF_DEADLINE_MS);
+  });
+
+  it("reports when the cut is due, only while in grace", () => {
+    const paid = paidSession();
+    expect(cutDueAtMs(paid)).toBeNull();
+    const grace = step(paid, { type: "USAGE_UPDATE", bytes: CHUNK_BYTES, nowMs: 1_900 });
+    expect(cutDueAtMs(grace)).toBe(1_900 + GRACE_MS);
   });
 
   it("never lets usage counters go backwards", () => {

@@ -20,7 +20,7 @@ MeterNet is an open-source hotspot box, a Linux laptop or Raspberry Pi, that sel
 1. The device asks for the next 2 MB. `meterd` calls FNN `new_invoice` and returns the invoice.
 2. The browser pays with `send_payment`. `meterd` polls `get_invoice` until `status` is `Paid`. The possible statuses are `Open`, `Cancelled`, `Expired`, `Received`, and `Paid`.
 3. On `Paid`, that device's allowance rises by 2 MB.
-4. If usage reaches the allowance and no payment lands within a 15 s grace window, `meterd` runs `ndsctl deauth <mac>`.
+4. If usage reaches the allowance and no payment lands within the grace window, `meterd` runs `ndsctl deauth <mac>`. Grace is 12 s, so that detecting and closing fit inside the 15 s cutoff ([ARCHITECTURE.md, "Cutoff budget"](ARCHITECTURE.md#cutoff-budget)).
 
 Per-client traffic comes from `ndsctl json`. If that doesn't expose byte counters, per-device iptables counters are the fallback.
 

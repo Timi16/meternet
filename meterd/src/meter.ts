@@ -2,7 +2,13 @@
 // act on the returned session (e.g. close the gate when state is "cut").
 
 export const CHUNK_BYTES = 2 * 1024 * 1024;
-export const GRACE_MS = 15000;
+// The proposal's promise: access closes within 15 s of the allowance running
+// out. Measured from t_exhausted_ms to t_gate_closed_ms on the cut log line.
+export const CUTOFF_DEADLINE_MS = 15_000;
+// What the user gets to land a payment. The remaining 3 s of the deadline
+// cover detecting expiry and closing the gate (ARCHITECTURE.md, "Cutoff
+// budget"); retune from the week-3 failure lab measurements.
+export const GRACE_MS = 12_000;
 // Ask for the next invoice once this much allowance is left, so a device
 // that keeps paying never reaches grace.
 export const PREFETCH_REMAINING_BYTES = CHUNK_BYTES / 2;
@@ -51,6 +57,12 @@ export function initialSession(nowMs = 0): MeterSession {
 export function needsInvoice(s: MeterSession): boolean {
   if (s.state === "cut" || s.pendingInvoices.length > 0) return false;
   return s.state === "idle" || s.allowanceBytes - s.usedBytes <= PREFETCH_REMAINING_BYTES;
+}
+
+// When grace runs out, so the caller can schedule the cut exactly; null
+// unless the session is in grace.
+export function cutDueAtMs(s: MeterSession): number | null {
+  return s.state === "grace" && s.graceStartedAtMs !== null ? s.graceStartedAtMs + GRACE_MS : null;
 }
 
 export function step(s: MeterSession, e: MeterEvent): MeterSession {

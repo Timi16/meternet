@@ -7,7 +7,7 @@ import { DeviceMeter } from "../src/device";
 import { FnnRpcClient } from "../src/fnn";
 import type { Gate } from "../src/gate";
 import { JsonlLog, MemoryLog } from "../src/log";
-import { CHUNK_BYTES, GRACE_MS } from "../src/meter";
+import { CHUNK_BYTES, CUTOFF_DEADLINE_MS, GRACE_MS } from "../src/meter";
 import { MockFnn } from "./mock-fnn";
 
 const MAC = "aa:bb:cc:dd:ee:ff";
@@ -23,7 +23,29 @@ class FakeGate implements Gate {
   }
 }
 
+// Stands in for setTimeout so tests control when the cut deadline fires.
+class FakeScheduler {
+  timers: { at: number; fn: () => void; live: boolean }[] = [];
+  schedule = (delayMs: number, fn: () => void) => {
+    const t = { at: nowMs + delayMs, fn, live: true };
+    this.timers.push(t);
+    return () => void (t.live = false);
+  };
+  get armed() {
+    return this.timers.filter((t) => t.live);
+  }
+  // Moves the clock to the next live timer and runs it.
+  async fireNext() {
+    const t = this.armed.sort((a, b) => a.at - b.at)[0]!;
+    t.live = false;
+    nowMs = Math.max(nowMs, t.at);
+    t.fn();
+    await new Promise((r) => setImmediate(r));
+  }
+}
+
 let mock: MockFnn;
+let timers: FakeScheduler;
 let gate: FakeGate;
 let log: MemoryLog;
 let nowMs: number;
@@ -34,6 +56,7 @@ beforeEach(async () => {
   gate = new FakeGate();
   log = new MemoryLog();
   nowMs = 1_000;
+  timers = new FakeScheduler();
   meter = new DeviceMeter(
     {
       fnn: new FnnRpcClient(mock.url),
@@ -42,6 +65,7 @@ beforeEach(async () => {
       now: () => nowMs,
       chunkPriceShannons: PRICE,
       deviceSalt: "test-salt",
+      schedule: timers.schedule,
     },
     MAC,
   );
@@ -152,6 +176,100 @@ describe("DeviceMeter", () => {
     await Promise.all([meter.poll(), meter.poll()]);
     expect(log.lines.filter((l) => l.event === "invoice_paid")).toHaveLength(1);
     expect(gate.calls).toEqual([`open ${MAC}`]);
+  });
+
+  it("closes the gate at the grace deadline without waiting for a tick", async () => {
+    await meter.requestChunk();
+    await payOpenInvoices();
+    nowMs = 5_000;
+    meter.usage(CHUNK_BYTES);
+    expect(timers.armed.map((t) => t.at)).toEqual([5_000 + GRACE_MS]);
+
+    await timers.fireNext();
+    expect(meter.state).toBe("cut");
+    expect(gate.calls).toEqual([`open ${MAC}`, `close ${MAC}`]);
+    expect(timers.armed).toEqual([]);
+  });
+
+  it("logs exhaustion and gate-closed times, and they are within the 15 s deadline", async () => {
+    await meter.requestChunk();
+    await payOpenInvoices();
+    nowMs = 5_000;
+    meter.usage(CHUNK_BYTES);
+    await timers.fireNext();
+
+    const grace = log.lines.find((l) => l.event === "grace_started")!;
+    const cut = log.lines.find((l) => l.event === "cut")!;
+    expect(grace.t_exhausted_ms).toBe(5_000);
+    expect(cut.t_exhausted_ms).toBe(5_000);
+    expect(cut.t_gate_closed_ms).toBe(5_000 + GRACE_MS);
+    expect(cut.t_gate_closed_ms! - cut.t_exhausted_ms!).toBeLessThanOrEqual(CUTOFF_DEADLINE_MS);
+  });
+
+  it("writes the cut line only after the gate has actually closed", async () => {
+    gate.close = async (key) => {
+      nowMs += 700; // e.g. ndsctl deauth takes 700 ms
+      gate.calls.push(`close ${key}`);
+    };
+    await meter.requestChunk();
+    await payOpenInvoices();
+    meter.usage(CHUNK_BYTES);
+    await timers.fireNext();
+    const cut = log.lines.find((l) => l.event === "cut")!;
+    expect(cut.t_gate_closed_ms! - cut.t_exhausted_ms!).toBe(GRACE_MS + 700);
+  });
+
+  it("still logs the cut, with no gate-closed time, if closing the gate fails", async () => {
+    gate.close = async () => {
+      throw new Error("ndsctl deauth failed");
+    };
+    await meter.requestChunk();
+    await payOpenInvoices();
+    meter.usage(CHUNK_BYTES);
+    nowMs += GRACE_MS;
+    await expect(meter.tick()).rejects.toThrow("ndsctl deauth failed");
+    const cut = log.lines.find((l) => l.event === "cut")!;
+    expect(cut.t_exhausted_ms).not.toBeNull();
+    expect(cut.t_gate_closed_ms).toBeNull();
+  });
+
+  it("disarms the deadline when a payment lands during grace", async () => {
+    await meter.requestChunk();
+    await payOpenInvoices();
+    meter.usage(CHUNK_BYTES);
+    await meter.requestChunk();
+    expect(timers.armed).toHaveLength(1);
+    await payOpenInvoices();
+    expect(meter.state).toBe("paid");
+    expect(timers.armed).toEqual([]);
+  });
+
+  it("re-arms if the timer fires a little early", async () => {
+    await meter.requestChunk();
+    await payOpenInvoices();
+    meter.usage(CHUNK_BYTES);
+    const [t] = timers.armed;
+    t!.live = false;
+    nowMs = t!.at - 1; // timer ran 1 ms early
+    t!.fn();
+    await new Promise((r) => setImmediate(r));
+    expect(meter.state).toBe("grace");
+    expect(timers.armed.map((x) => x.at)).toEqual([t!.at]);
+  });
+
+  it("cuts on time even while an FNN poll is hung", async () => {
+    await meter.requestChunk();
+    await payOpenInvoices();
+    meter.usage(CHUNK_BYTES);
+    await meter.requestChunk();
+    mock.hang = true;
+    const hungPoll = meter.poll();
+    await timers.fireNext();
+    expect(meter.state).toBe("cut");
+    expect(gate.calls.at(-1)).toBe(`close ${MAC}`);
+    mock.hang = false;
+    mock.releaseHung();
+    await hungPoll;
   });
 
   it("drops an expired invoice and issues a fresh one", async () => {

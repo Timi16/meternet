@@ -25,6 +25,13 @@ export class MockFnn {
   readonly invoices = new Map<string, StoredInvoice>();
   private server: Server | null = null;
   url = "";
+  // While true, requests get no reply until releaseHung(): a stuck FNN RPC.
+  hang = false;
+  private hung: (() => void)[] = [];
+
+  releaseHung(): void {
+    for (const reply of this.hung.splice(0)) reply();
+  }
 
   async start(): Promise<this> {
     this.server = createServer((req, res) => {
@@ -33,9 +40,13 @@ export class MockFnn {
       req.on("end", () => {
         const msg = JSON.parse(body) as RecordedRequest;
         this.requests.push(msg);
-        const reply = this.handle(msg);
-        res.setHeader("content-type", "application/json");
-        res.end(JSON.stringify({ jsonrpc: "2.0", id: msg.id, ...reply }));
+        const send = () => {
+          const reply = this.handle(msg);
+          res.setHeader("content-type", "application/json");
+          res.end(JSON.stringify({ jsonrpc: "2.0", id: msg.id, ...reply }));
+        };
+        if (this.hang) this.hung.push(send);
+        else send();
       });
     });
     await new Promise<void>((r) => this.server!.listen(0, "127.0.0.1", r));
@@ -45,6 +56,7 @@ export class MockFnn {
   }
 
   async stop(): Promise<void> {
+    this.releaseHung();
     await new Promise<void>((r) => this.server?.close(() => r()));
   }
 
