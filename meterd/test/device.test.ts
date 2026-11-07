@@ -126,6 +126,34 @@ describe("DeviceMeter", () => {
     expect(Date.parse(cut.ts) - Date.parse(grace.ts)).toBeLessThanOrEqual(GRACE_MS);
   });
 
+  it("starts grace when usage is read, even if the last tick was earlier", async () => {
+    await meter.requestChunk();
+    await payOpenInvoices();
+    await meter.tick();
+    nowMs += 900; // counters arrive between ticks
+    meter.usage(CHUNK_BYTES);
+    nowMs += GRACE_MS - 1;
+    await meter.tick();
+    expect(meter.state).toBe("grace");
+    nowMs += 1;
+    await meter.tick();
+    expect(meter.state).toBe("cut");
+  });
+
+  it("issues one invoice when the device asks twice at once", async () => {
+    const [a, b] = await Promise.all([meter.requestChunk(), meter.requestChunk()]);
+    expect(b).toBe(a);
+    expect(mock.invoices.size).toBe(1);
+  });
+
+  it("credits a payment once when polls overlap", async () => {
+    await meter.requestChunk();
+    for (const [hash] of mock.invoices) mock.setStatus(hash, "Paid");
+    await Promise.all([meter.poll(), meter.poll()]);
+    expect(log.lines.filter((l) => l.event === "invoice_paid")).toHaveLength(1);
+    expect(gate.calls).toEqual([`open ${MAC}`]);
+  });
+
   it("drops an expired invoice and issues a fresh one", async () => {
     const first = await meter.requestChunk();
     const [hash] = mock.invoices.keys();

@@ -66,9 +66,9 @@ describe("meter", () => {
 
   it("asks for the next invoice once half a chunk remains", () => {
     let s = paidSession();
-    s = step(s, { type: "USAGE_UPDATE", bytes: CHUNK_BYTES / 2 - 1 });
+    s = step(s, { type: "USAGE_UPDATE", bytes: CHUNK_BYTES / 2 - 1, nowMs: 1_000 });
     expect(needsInvoice(s)).toBe(false);
-    s = step(s, { type: "USAGE_UPDATE", bytes: CHUNK_BYTES / 2 });
+    s = step(s, { type: "USAGE_UPDATE", bytes: CHUNK_BYTES / 2, nowMs: 1_000 });
     expect(needsInvoice(s)).toBe(true);
     s = step(s, { type: "INVOICE_ISSUED", paymentHash: H2 });
     expect(s.state).toBe("paid");
@@ -76,7 +76,7 @@ describe("meter", () => {
   });
 
   it("enters grace when usage reaches the allowance", () => {
-    const s = step(paidSession(), { type: "USAGE_UPDATE", bytes: CHUNK_BYTES });
+    const s = step(paidSession(), { type: "USAGE_UPDATE", bytes: CHUNK_BYTES, nowMs: 1_000 });
     expect(s.state).toBe("grace");
     expect(s.graceStartedAtMs).toBe(1_000);
   });
@@ -85,7 +85,7 @@ describe("meter", () => {
     const s = run(
       paidSession(),
       { type: "INVOICE_ISSUED", paymentHash: H2 },
-      { type: "USAGE_UPDATE", bytes: CHUNK_BYTES },
+      { type: "USAGE_UPDATE", bytes: CHUNK_BYTES, nowMs: 1_000 },
       { type: "TICK", nowMs: 1_000 + GRACE_MS - 1 },
       { type: "PAYMENT_CONFIRMED", paymentHash: H2 },
       { type: "TICK", nowMs: 1_000 + GRACE_MS },
@@ -96,7 +96,7 @@ describe("meter", () => {
   });
 
   it("cuts an unpaid session within 15s after the allowance is used", () => {
-    let s = run(paidSession(), { type: "USAGE_UPDATE", bytes: CHUNK_BYTES });
+    let s = run(paidSession(), { type: "USAGE_UPDATE", bytes: CHUNK_BYTES, nowMs: 1_000 });
     expect(s.state).toBe("grace");
 
     s = step(s, { type: "TICK", nowMs: 1_000 + GRACE_MS - 1 });
@@ -111,7 +111,7 @@ describe("meter", () => {
     const s = run(
       paidSession(),
       { type: "INVOICE_ISSUED", paymentHash: H2 },
-      { type: "USAGE_UPDATE", bytes: CHUNK_BYTES },
+      { type: "USAGE_UPDATE", bytes: CHUNK_BYTES, nowMs: 1_000 },
       { type: "TICK", nowMs: 1_000 + GRACE_MS },
       { type: "PAYMENT_CONFIRMED", paymentHash: H2 },
     );
@@ -119,11 +119,18 @@ describe("meter", () => {
     expect(needsInvoice(s)).toBe(false);
   });
 
+  it("starts grace at the time of the usage reading, not the last tick", () => {
+    const s = step(paidSession(), { type: "USAGE_UPDATE", bytes: CHUNK_BYTES, nowMs: 1_900 });
+    expect(s.graceStartedAtMs).toBe(1_900);
+    expect(step(s, { type: "TICK", nowMs: 1_000 + GRACE_MS }).state).toBe("grace");
+    expect(step(s, { type: "TICK", nowMs: 1_900 + GRACE_MS }).state).toBe("cut");
+  });
+
   it("never lets usage counters go backwards", () => {
     const s = run(
       paidSession(),
-      { type: "USAGE_UPDATE", bytes: 1_000 },
-      { type: "USAGE_UPDATE", bytes: 10 },
+      { type: "USAGE_UPDATE", bytes: 1_000, nowMs: 1_000 },
+      { type: "USAGE_UPDATE", bytes: 10, nowMs: 1_000 },
     );
     expect(s.usedBytes).toBe(1_000);
   });

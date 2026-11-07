@@ -37,6 +37,9 @@ export class DeviceMeter {
   private session: MeterSession;
   private readonly issued = new Map<Hex, IssuedInvoice>();
   private gateOpen = false;
+  // Serialises requestChunk() and poll(): two overlapping calls would otherwise
+  // issue duplicate invoices or credit the same payment twice.
+  private busy: Promise<unknown> = Promise.resolve();
 
   constructor(
     private readonly deps: MeterDeps,
@@ -52,13 +55,19 @@ export class DeviceMeter {
 
   // Returns the invoice the device should pay next, issuing one if the meter
   // wants it, or null if nothing is due (or the device is cut).
-  async requestChunk(): Promise<string | null> {
-    if (needsInvoice(this.session)) await this.issueInvoice();
-    const latest = this.session.pendingInvoices.at(-1) as Hex | undefined;
-    return latest ? this.issued.get(latest)!.address : null;
+  requestChunk(): Promise<string | null> {
+    return this.serial(async () => {
+      if (needsInvoice(this.session)) await this.issueInvoice();
+      const latest = this.session.pendingInvoices.at(-1) as Hex | undefined;
+      return latest ? this.issued.get(latest)!.address : null;
+    });
   }
 
-  async poll(): Promise<void> {
+  poll(): Promise<void> {
+    return this.serial(() => this.pollOnce());
+  }
+
+  private async pollOnce(): Promise<void> {
     for (const hash of [...this.session.pendingInvoices] as Hex[]) {
       const { status } = await this.deps.fnn.getInvoice({ payment_hash: hash });
       if (status === "Paid") await this.onPaid(hash);
@@ -75,7 +84,7 @@ export class DeviceMeter {
 
   usage(bytes: number): void {
     const before = this.session.state;
-    this.apply({ type: "USAGE_UPDATE", bytes });
+    this.apply({ type: "USAGE_UPDATE", bytes, nowMs: this.deps.now() });
     if (before !== "grace" && this.session.state === "grace") this.write({ event: "grace_started" });
   }
 
@@ -122,6 +131,12 @@ export class DeviceMeter {
       await this.deps.gate.open(this.deviceKey);
       this.write({ event: "gate_opened" });
     }
+  }
+
+  private serial<T>(f: () => Promise<T>): Promise<T> {
+    const run = this.busy.then(f, f);
+    this.busy = run.catch(() => undefined);
+    return run;
   }
 
   private apply(e: MeterEvent): void {

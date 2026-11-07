@@ -21,8 +21,8 @@ export type MeterEvent =
   | { type: "PAYMENT_CONFIRMED"; paymentHash: string }
   // Invoice reached Expired or Cancelled without being paid.
   | { type: "INVOICE_CLOSED"; paymentHash: string }
-  // Cumulative bytes used by the device this session.
-  | { type: "USAGE_UPDATE"; bytes: number }
+  // Cumulative bytes used by the device this session, read at nowMs.
+  | { type: "USAGE_UPDATE"; bytes: number; nowMs: number }
   | { type: "TICK"; nowMs: number };
 
 export interface MeterSession {
@@ -30,7 +30,7 @@ export interface MeterSession {
   readonly allowanceBytes: number;
   readonly usedBytes: number;
   readonly pendingInvoices: readonly string[];
-  // Last time seen via TICK; used to stamp the start of grace.
+  // Last time seen via TICK or USAGE_UPDATE.
   readonly nowMs: number;
   readonly graceStartedAtMs: number | null;
   readonly cutReason: CutReason | null;
@@ -83,10 +83,13 @@ export function step(s: MeterSession, e: MeterEvent): MeterSession {
 
     case "USAGE_UPDATE": {
       const usedBytes = Math.max(s.usedBytes, e.bytes);
+      const nowMs = Math.max(s.nowMs, e.nowMs);
+      // Grace starts when the counter shows the allowance used up, not at the
+      // last TICK, which could be up to one tick interval earlier.
       if (s.state === "paid" && usedBytes >= s.allowanceBytes) {
-        return { ...s, usedBytes, state: "grace", graceStartedAtMs: s.nowMs };
+        return { ...s, usedBytes, nowMs, state: "grace", graceStartedAtMs: nowMs };
       }
-      return { ...s, usedBytes };
+      return { ...s, usedBytes, nowMs };
     }
 
     case "TICK": {
