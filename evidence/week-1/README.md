@@ -4,7 +4,7 @@ Everything here can be checked without trusting the author:
 
 ```sh
 node evidence/week-1/verify.mjs      # Node 20+, no install
-cd meterd && npm ci && npm test      # 26 tests against a mocked FNN RPC
+cd meterd && npm ci && npm test      # 30 tests against a mocked FNN RPC
 ```
 
 `verify.mjs` checks that every logged preimage hashes to its payment hash, that both channel funding transactions are committed on CKB testnet, and recomputes the keysend-vs-invoice summary from the raw lines.

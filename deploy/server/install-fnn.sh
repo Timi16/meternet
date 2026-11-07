@@ -29,10 +29,8 @@ install -m 755 "$tmp/fnn" "$tmp/fnn-cli" /usr/local/bin/
 rm -rf "$tmp"
 
 # Fresh testnet key and wallet password on first install only.
-if [ -z "$(ls -A "$DATA/ckb")" ]; then
-  umask 077
-  openssl rand -hex 32 > "$DATA/ckb/key"
-fi
+# Subshells keep umask 077 from leaking into the systemd unit written below.
+[ -n "$(ls -A "$DATA/ckb")" ] || (umask 077 && openssl rand -hex 32 > "$DATA/ckb/key")
 [ -f "$DATA/password" ] || (umask 077 && openssl rand -hex 24 > "$DATA/password")
 chown -R fnn:fnn "$DATA"
 

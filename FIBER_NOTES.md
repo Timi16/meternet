@@ -4,7 +4,7 @@ A running log of bugs, gaps and surprises in FNN (the native Fiber Network Node)
 
 ## Bug and gap log
 
-Pinned at kickoff: **FNN v0.9.1** (`9a561b3`, release binary `fnn_v0.9.1-aarch64-darwin-portable`, sha256 `4a330134…f63d`) and **`@nervosnetwork/fiber-js@0.9.1`**. Unpatched.
+Pinned at kickoff: **FNN v0.9.1** (`9a561b3`, release binaries `fnn_v0.9.1-aarch64-darwin-portable` sha256 `4a330134…f63d` on the laptop and `fnn_v0.9.1-aarch64-linux-portable` sha256 `c52c99b0…3f0c` on the public server) and **`@nervosnetwork/fiber-js@0.9.1`**. Unpatched.
 
 | # | Date | FNN / fiber-js version | What broke or is missing | Upstream issue |
 |---|------|------------------------|--------------------------|----------------|
@@ -51,7 +51,7 @@ The trial used Trickle's pattern (one keysend `send_payment` per tick) on plain 
 | invoice | 20/20 | 107 ms | 117 ms | 118 ms | 20/20 |
 | keysend | 20/20 | 106 ms | 109 ms | 111 ms | 20/20 |
 
-Raw lines: `logs/trial-2026-11-06T11-04-09-168Z.jsonl`, not committed; to be published with the other logs. **These are not H1 numbers.** Both nodes ran on one laptop over localhost, and the 100 ms poll interval dominates the figures. Real phone and 4G latency is measured from week 2.
+Raw lines: [`evidence/week-1/keysend-vs-invoice-trial.jsonl`](evidence/week-1/keysend-vs-invoice-trial.jsonl); `node evidence/week-1/verify.mjs` recomputes this table from them. **These are not H1 numbers.** Both nodes ran on one laptop over localhost, and the 100 ms poll interval dominates the figures. Real phone and 4G latency is measured from week 2.
 
 ### Why invoices
 
