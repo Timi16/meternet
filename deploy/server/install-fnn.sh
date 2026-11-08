@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Installs the pinned FNN release as a systemd service on the public server
-# (Ubuntu, arm64). Idempotent: re-running keeps the existing key and data.
+# (Ubuntu, arm64 or x86_64). Idempotent: re-running keeps the existing key and data.
 #
 #   sudo bash install-fnn.sh
 #
@@ -9,8 +9,13 @@
 set -euo pipefail
 
 VERSION=v0.9.1
-ASSET=fnn_${VERSION}-aarch64-linux-portable.tar.gz
-SHA256=c52c99b06bd954244b3fb91634d5b5031c23170208e46c7738ee308cb0bd3f0c
+# Release "portable" builds, pinned by the sha256 GitHub publishes for each.
+case "$(uname -m)" in
+  aarch64) ARCH=aarch64; SHA256=c52c99b06bd954244b3fb91634d5b5031c23170208e46c7738ee308cb0bd3f0c ;;
+  x86_64)  ARCH=x86_64;  SHA256=6425bc90ce971a5b8f10bd93667227cc932ee2e50a70f584e2c07590ce446d0d ;;
+  *) echo "unsupported architecture: $(uname -m)" >&2; exit 1 ;;
+esac
+ASSET=fnn_${VERSION}-${ARCH}-linux-portable.tar.gz
 URL=https://github.com/nervosnetwork/fiber/releases/download/${VERSION}/${ASSET}
 DATA=/var/lib/fnn
 
