@@ -8,5 +8,10 @@
     "channel": "public server: laptop payer (Lagos) -> server FNN (AWS eu-north-1)",
     "tx_hash": "0x8e29626363e3181825d1d2046ac4e88db6946f4471584ae4f8bf4499aff91c7e",
     "payer_funding_ckb": 200
+  },
+  {
+    "channel": "public server (moved 2026-11-08): laptop payer (Lagos) -> VPS FNN (InterServer, x86_64)",
+    "tx_hash": "0x268db601ecdb7a3a0b5f2349c207bd4c5a987b13300ded96f80e7afb525f7a62",
+    "payer_funding_ckb": 200
   }
 ]

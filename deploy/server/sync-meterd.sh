@@ -6,7 +6,7 @@
 #   SERVER=ubuntu@host SSH_KEY=~/.ssh/key deploy/server/sync-meterd.sh
 set -euo pipefail
 
-SERVER=${SERVER:-ubuntu@16.192.4.91}
+SERVER=${SERVER:-meternet@162.35.126.18}
 SSH_KEY=${SSH_KEY:-$HOME/.ssh/meternet}
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 SSH=(ssh -i "$SSH_KEY" -o ConnectTimeout=10)

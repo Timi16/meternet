@@ -4,7 +4,7 @@ A running log of bugs, gaps and surprises in FNN (the native Fiber Network Node)
 
 ## Bug and gap log
 
-Pinned at kickoff: **FNN v0.9.1** (`9a561b3`, release binaries `fnn_v0.9.1-aarch64-darwin-portable` sha256 `4a330134…f63d` on the laptop and `fnn_v0.9.1-aarch64-linux-portable` sha256 `c52c99b0…3f0c` on the public server) and **`@nervosnetwork/fiber-js@0.9.1`**. Unpatched.
+Pinned at kickoff: **FNN v0.9.1** (`9a561b3`, release binaries `fnn_v0.9.1-aarch64-darwin-portable` sha256 `4a330134…f63d` on the laptop and `fnn_v0.9.1-aarch64-linux-portable` sha256 `c52c99b0…3f0c` and `fnn_v0.9.1-x86_64-linux-portable` sha256 `6425bc90…6d0d` on the public server) and **`@nervosnetwork/fiber-js@0.9.1`**. Unpatched.
 
 | # | Date | FNN / fiber-js version | What broke or is missing | Upstream issue |
 |---|------|------------------------|--------------------------|----------------|
@@ -24,7 +24,7 @@ Pinned at kickoff: **FNN v0.9.1** (`9a561b3`, release binaries `fnn_v0.9.1-aarch
 
 - **Setup:** the payer runs `open_channel {funding_amount: 200 CKB, public: false, one_way: true}` to the box. The box uses the default testnet config (`open_channel_auto_accept_min_ckb_funding_amount` 100 CKB, `auto_accept_channel_ckb_funding_amount` 99 CKB).
 - **What happened:** funding tx [`0x9eb622c3…be9e8`](https://pudge.explorer.nervos.org/transaction/0x9eb622c394fb75019ff830de3a3a8c7cc9fb1b8537f8f34251d1597ff04be9e8) has a **299 CKB** funding cell (200 from the payer, 99 from the box). After one 0.1 CKB payment, `list_channels` shows payer local 100.9 / box local 0.1. So about 99 CKB per side is held back, and the payer could only ever spend 101 of its 200 CKB.
-- **Reproduced:** same result on the public server (FNN v0.9.1, Ubuntu arm64). Funding tx [`0x8e296263…1c7e`](https://pudge.explorer.nervos.org/transaction/0x8e29626363e3181825d1d2046ac4e88db6946f4471584ae4f8bf4499aff91c7e) also has a 299 CKB funding cell for a 200 CKB open.
+- **Reproduced:** same result on the public server, on Ubuntu arm64 (AWS) and on Ubuntu x86_64 (VPS, funding tx [`0x268db601…7a62`](https://pudge.explorer.nervos.org/transaction/0x268db601ecdb7a3a0b5f2349c207bd4c5a987b13300ded96f80e7afb525f7a62), also 299 CKB). Funding tx [`0x8e296263…1c7e`](https://pudge.explorer.nervos.org/transaction/0x8e29626363e3181825d1d2046ac4e88db6946f4471584ae4f8bf4499aff91c7e) also has a 299 CKB funding cell for a 200 CKB open.
 - **Why it matters:** for H3, the box ties up 99 CKB per user channel even though it can't send on a one-way channel. For users, a phone needs more than 100 CKB just to open a channel. `TODO(verify)`: that the ~99 CKB per side is the reserved occupied capacity for each party's settlement cell. I'm inferring this from the balances; I haven't found it in the docs.
 - **Workaround:** none needed for week 1. Budget it: box liquidity ≈ 99 CKB × channels. Check whether the box can accept one-way channels without contributing funds.
 - **Draft upstream question:**
