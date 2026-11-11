@@ -18,6 +18,7 @@ import {
   startWallet,
   type Channel,
   type Wallet,
+  WalletInUse,
 } from "./wallet";
 
 type Tone = "go" | "wait" | "stop" | undefined;
@@ -159,7 +160,7 @@ async function boot() {
   } catch (e) {
     step("wallet", "error", e instanceof Error ? e.message : String(e));
     $("wallet-progress").classList.add("hidden");
-    message("Wallet failed to start", "stop");
+    message(e instanceof WalletInUse ? "Already open in another tab" : "Wallet failed to start", "stop");
     lamp("stop");
     return;
   } finally {
@@ -354,6 +355,7 @@ async function startRide(kind: Kind) {
   keyLabel("Stop paying", "停止付款");
   receiptReset();
   tilesShown = 0;
+  $("tape").classList.remove("hidden");
   $("boarding").classList.add("compact");
   flag("down");
   lamp("wait");
@@ -578,6 +580,7 @@ function rideAgain() {
   $("fb-status").textContent = "";
   tilesShown = 0;
   showMeter(0, 0, 0, 0.1);
+  $("tape").classList.add("hidden");
   flag("up");
   lamp("go");
   message("Ready. Pick a ride", "go");

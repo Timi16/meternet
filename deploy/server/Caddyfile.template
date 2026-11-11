@@ -32,6 +32,14 @@ __HOST__ {
 		Referrer-Policy "no-referrer"
 	}
 
+	# Pages, styles and entry scripts are re-checked on every visit, so a new
+	# deploy shows up at once. Build chunks carry a content hash in their name
+	# and fonts never change, so those are cached for good.
+	@immutable path /dist/chunks/* /fonts/*
+	header @immutable Cache-Control "public, max-age=31536000, immutable"
+	@revalidate not path /dist/chunks/* /fonts/* /api/* /gw/*
+	header @revalidate Cache-Control "no-cache"
+
 	# meterd (localhost only). Caddy sets X-Forwarded-For to the client
 	# address, which meterd uses for its per-address limits.
 	handle /api/* {

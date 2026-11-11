@@ -6,6 +6,7 @@
 import { Fiber, randomSecretKey } from "@nervosnetwork/fiber-js";
 import { parseDocument } from "yaml";
 import { lockToAddress, type Script } from "./ckb-address";
+import { claimWallet } from "./wallet";
 
 declare const __BOX_ADDR__: string;
 declare const __BOX_PUBKEY__: string;
@@ -56,6 +57,7 @@ function loadKey(name: string): Uint8Array {
 
 async function main(): Promise<void> {
   if (!crossOriginIsolated) throw new Error("page is not cross-origin isolated (COOP/COEP headers missing)");
+  if (!(await claimWallet())) throw new Error("MeterNet is already open in another tab of this browser; close it and reload");
 
   const fiber = new Fiber();
   const config = parseDocument(fiber.getDefaultConfig("testnet", __CKB_RPC__), { schema: "failsafe" });

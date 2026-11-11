@@ -55,7 +55,30 @@ function loadKey(name: string, fresh: () => Uint8Array): Uint8Array {
   return key;
 }
 
+// One wallet per browser: every tab shares the same keys and IndexedDB, so two
+// tabs would run the same node twice and the second can't connect. The first
+// tab holds this lock for as long as it is open (Web Locks API; where it's
+// missing, e.g. very old browsers, there's no guard).
+export function claimWallet(): Promise<boolean> {
+  if (!("locks" in navigator)) return Promise.resolve(true);
+  return new Promise((resolve) => {
+    void navigator.locks.request("meternet-wallet", { ifAvailable: true }, (lock) => {
+      resolve(lock !== null);
+      // Keep holding it until the tab closes.
+      return lock ? new Promise<void>(() => undefined) : undefined;
+    });
+  });
+}
+
+export class WalletInUse extends Error {
+  constructor() {
+    super("MeterNet is already open in another tab of this browser. Use that tab, or close it and reload this one.");
+    this.name = "WalletInUse";
+  }
+}
+
 export async function startWallet(): Promise<Wallet> {
+  if (!(await claimWallet())) throw new WalletInUse();
   if (!crossOriginIsolated) {
     throw new Error("This browser can't run the wallet here (the page isn't cross-origin isolated). Try Chrome or Safari.");
   }
