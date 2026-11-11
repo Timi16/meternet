@@ -12,3 +12,6 @@ logs/
 *.jsonl
 !.env.example
 !evidence/**/*.jsonl
+
+# gateway test content, made by deploy/server/sync-content.sh
+content/
