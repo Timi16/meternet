@@ -4,9 +4,9 @@
 // fresh byte counters arrive.
 
 import { createHash, randomBytes, randomUUID } from "node:crypto";
-import { toHex, type FnnClient, type Hex } from "./fnn";
+import { toHex, type FnnClient, type Hex, type InvoiceStatus } from "./fnn";
 import type { Gate } from "./gate";
-import type { LogEntry, MeterLog } from "./log";
+import type { EndReason, LogEntry, MeterLog } from "./log";
 import { cutDueAtMs, initialSession, needsInvoice, step, type MeterEvent, type MeterSession } from "./meter";
 
 export const INVOICE_EXPIRY_SEC = 120;
@@ -25,6 +25,9 @@ export interface MeterDeps {
   deviceSalt: string;
   // Runs fn after delayMs and returns a cancel function. Defaults to setTimeout.
   schedule?: (delayMs: number, fn: () => void) => () => void;
+  // Issue the next invoice once this much allowance is left. Defaults to
+  // PREFETCH_REMAINING_BYTES (1 MB); the web gateway uses a whole chunk.
+  prefetchRemainingBytes?: number;
 }
 
 function defaultSchedule(delayMs: number, fn: () => void): () => void {
@@ -54,10 +57,17 @@ export class DeviceMeter {
   private busy: Promise<unknown> = Promise.resolve();
   // The armed cut-deadline timer, if any. tick() on a timer stays as a backstop.
   private deadline: { dueAtMs: number; cancel: () => void } | null = null;
+  // Set by end(): the session is over and the meter ignores everything.
+  private ended = false;
 
+  // deviceKey identifies the device (hashed into device_id). gateKey is what
+  // the gate opens and closes: the MAC on the hotspot (the same as
+  // deviceKey), or one session on the web gateway, where a browser can have
+  // several sessions under one device ID.
   constructor(
     private readonly deps: MeterDeps,
     readonly deviceKey: string,
+    readonly gateKey: string = deviceKey,
   ) {
     this.deviceId = hashDeviceId(deps.deviceSalt, deviceKey);
     this.session = initialSession(deps.now());
@@ -67,32 +77,67 @@ export class DeviceMeter {
     return this.session.state;
   }
 
+  get snapshot(): MeterSession {
+    return this.session;
+  }
+
+  // Ends a session that is not cut, e.g. one left idle: closes the gate if it
+  // is open (fail closed, like a cut) and logs a session_ended line.
+  async end(reason: EndReason): Promise<void> {
+    if (this.ended) return;
+    this.ended = true;
+    this.deadline?.cancel();
+    this.deadline = null;
+    if (this.session.state === "cut") return;
+    if (this.gateOpen) {
+      this.gateOpen = false;
+      await this.closeGateUntilClosed();
+    }
+    this.write({ event: "session_ended", cutoff_reason: reason, t_gate_closed_ms: this.deps.now() });
+  }
+
   // Returns the invoice the device should pay next, issuing one if the meter
-  // wants it, or null if nothing is due (or the device is cut).
+  // wants it, or null if nothing is due (or the device is cut or ended).
   requestChunk(): Promise<string | null> {
     return this.serial(async () => {
-      if (needsInvoice(this.session)) await this.issueInvoice();
-      const latest = this.session.pendingInvoices.at(-1) as Hex | undefined;
-      return latest ? this.issued.get(latest)!.address : null;
+      if (this.ended) return null;
+      if (needsInvoice(this.session, this.deps.prefetchRemainingBytes)) await this.issueInvoice();
+      return this.latestInvoice();
     });
+  }
+
+  // The invoice the device should be paying now, and its payment hash.
+  get pendingInvoice(): { invoice: string; payment_hash: string } | null {
+    const latest = this.session.pendingInvoices.at(-1) as Hex | undefined;
+    return latest ? { invoice: this.issued.get(latest)!.address, payment_hash: latest } : null;
   }
 
   poll(): Promise<void> {
     return this.serial(() => this.pollOnce());
   }
 
+  private latestInvoice(): string | null {
+    const latest = this.session.pendingInvoices.at(-1) as Hex | undefined;
+    return latest ? this.issued.get(latest)!.address : null;
+  }
+
   private async pollOnce(): Promise<void> {
     for (const hash of [...this.session.pendingInvoices] as Hex[]) {
       const { status } = await this.deps.fnn.getInvoice({ payment_hash: hash });
-      if (status === "Paid") await this.onPaid(hash);
-      else if (status === "Expired" || status === "Cancelled") {
-        this.apply({ type: "INVOICE_CLOSED", paymentHash: hash });
-        this.write({
-          event: status === "Expired" ? "invoice_expired" : "invoice_cancelled",
-          ...this.invoiceFields(hash),
-        });
-        this.issued.delete(hash);
-      }
+      await this.settle(hash, status);
+    }
+  }
+
+  // Acts on an invoice's FNN status: credit Paid, drop Expired and Cancelled.
+  private async settle(hash: Hex, status: InvoiceStatus): Promise<void> {
+    if (status === "Paid") await this.onPaid(hash);
+    else if (status === "Expired" || status === "Cancelled") {
+      this.apply({ type: "INVOICE_CLOSED", paymentHash: hash });
+      this.write({
+        event: status === "Expired" ? "invoice_expired" : "invoice_cancelled",
+        ...this.invoiceFields(hash),
+      });
+      this.issued.delete(hash);
     }
   }
 
@@ -107,6 +152,7 @@ export class DeviceMeter {
   // Deliberately not serialised with poll(): a hung FNN call must never
   // delay a cut.
   async tick(): Promise<void> {
+    if (this.ended) return;
     const before = this.session.state;
     this.apply({ type: "TICK", nowMs: this.deps.now() });
     if (before !== "cut" && this.session.state === "cut") {
@@ -151,9 +197,9 @@ export class DeviceMeter {
       t_paid_seen_ms: paidAt,
     });
     this.issued.delete(hash);
-    if (!this.gateOpen && this.session.state === "paid") {
+    if (!this.gateOpen && !this.ended && this.session.state === "paid") {
       this.gateOpen = true;
-      await this.deps.gate.open(this.deviceKey);
+      await this.deps.gate.open(this.gateKey);
       this.write({ event: "gate_opened" });
     }
   }
@@ -161,7 +207,7 @@ export class DeviceMeter {
   private async closeGateUntilClosed(): Promise<void> {
     for (let delay = GATE_RETRY_FIRST_MS; ; delay = Math.min(delay * 2, GATE_RETRY_MAX_MS)) {
       try {
-        await this.deps.gate.close(this.deviceKey);
+        await this.deps.gate.close(this.gateKey);
         return;
       } catch (err) {
         // One line per failed attempt, so a crash mid-retry still leaves
@@ -189,6 +235,7 @@ export class DeviceMeter {
 
   // Keeps exactly one timer armed for the grace deadline while in grace.
   private syncDeadline(): void {
+    if (this.ended) return;
     const due = cutDueAtMs(this.session);
     if (this.deadline && this.deadline.dueAtMs === due) return;
     this.deadline?.cancel();

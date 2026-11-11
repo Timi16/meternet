@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { DeviceMeter, GATE_RETRY_FIRST_MS, GATE_RETRY_MAX_MS } from "../src/device";
 import { FnnRpcClient } from "../src/fnn";
 import type { Gate } from "../src/gate";
-import { JsonlLog, MemoryLog } from "../src/log";
+import { DailyJsonlLog, JsonlLog, MemoryLog } from "../src/log";
 import { CHUNK_BYTES, CUTOFF_DEADLINE_MS, GRACE_MS } from "../src/meter";
 import { MockFnn } from "./mock-fnn";
 
@@ -333,6 +333,88 @@ describe("DeviceMeter", () => {
   });
 });
 
+describe("DeviceMeter, web sessions", () => {
+  it("can use a separate gate key while hashing the device ID from the device key", async () => {
+    const a = new DeviceMeter(
+      { fnn: new FnnRpcClient(mock.url), gate, log, now: () => nowMs, chunkPriceShannons: PRICE, deviceSalt: "test-salt" },
+      "web:pubkey",
+      "session-a",
+    );
+    const b = new DeviceMeter(
+      { fnn: new FnnRpcClient(mock.url), gate, log, now: () => nowMs, chunkPriceShannons: PRICE, deviceSalt: "test-salt" },
+      "web:pubkey",
+      "session-b",
+    );
+    expect(a.deviceId).toBe(b.deviceId);
+    expect(a.sessionId).not.toBe(b.sessionId);
+    await a.requestChunk();
+    for (const [hash] of mock.invoices) mock.setStatus(hash, "Paid");
+    await a.poll();
+    expect(gate.calls).toEqual(["open session-a"]);
+  });
+
+  it("can keep a whole chunk prepaid ahead (prefetchRemainingBytes)", async () => {
+    const ahead = new DeviceMeter(
+      {
+        fnn: new FnnRpcClient(mock.url),
+        gate,
+        log,
+        now: () => nowMs,
+        chunkPriceShannons: PRICE,
+        deviceSalt: "test-salt",
+        prefetchRemainingBytes: CHUNK_BYTES,
+      },
+      MAC,
+    );
+    await ahead.requestChunk();
+    for (const [hash] of mock.invoices) mock.setStatus(hash, "Paid");
+    await ahead.poll();
+    // Nothing used yet, but the next invoice is already due.
+    expect(await ahead.requestChunk()).not.toBeNull();
+    expect(mock.invoices.size).toBe(2);
+    // With the default (1 MB left), the same point issues nothing.
+    await meter.requestChunk();
+    await payOpenInvoices();
+    expect(meter.snapshot.pendingInvoices).toHaveLength(0);
+    await meter.requestChunk();
+    expect(meter.snapshot.pendingInvoices).toHaveLength(0);
+  });
+
+  it("exposes a read-only snapshot of the session", async () => {
+    await meter.requestChunk();
+    await payOpenInvoices();
+    meter.usage(1234);
+    expect(meter.snapshot).toMatchObject({ state: "paid", allowanceBytes: CHUNK_BYTES, usedBytes: 1234 });
+  });
+
+  it("end() closes an open gate, disarms the deadline, logs it, and stops the meter", async () => {
+    await meter.requestChunk();
+    await payOpenInvoices();
+    meter.usage(CHUNK_BYTES);
+    expect(timers.armed).toHaveLength(1);
+
+    await meter.end("idle");
+    expect(gate.calls).toEqual([`open ${MAC}`, `close ${MAC}`]);
+    expect(timers.armed).toHaveLength(0);
+    expect(log.lines.at(-1)).toMatchObject({ event: "session_ended", cutoff_reason: "idle" });
+    expect(await meter.requestChunk()).toBeNull();
+    nowMs += GRACE_MS;
+    await meter.tick();
+    expect(log.lines.filter((l) => l.event === "cut")).toHaveLength(0);
+  });
+
+  it("end() on a cut session logs nothing more", async () => {
+    await meter.requestChunk();
+    await payOpenInvoices();
+    meter.usage(CHUNK_BYTES);
+    await timers.fireNext();
+    expect(meter.state).toBe("cut");
+    const before = log.lines.length;
+    await meter.end("idle");
+    expect(log.lines.length).toBe(before);
+  });
+});
+
 describe("JsonlLog", () => {
   it("appends one JSON object per line", () => {
     const file = join(mkdtempSync(join(tmpdir(), "meterd-")), "meterd.jsonl");
@@ -344,5 +426,18 @@ describe("JsonlLog", () => {
     const lines = readFileSync(file, "utf8").trimEnd().split("\n");
     expect(lines).toHaveLength(2);
     expect(JSON.parse(lines[1]!).event).toBe("cut");
+  });
+});
+
+describe("DailyJsonlLog", () => {
+  it("writes each line to the file for its own UTC day", () => {
+    const dir = mkdtempSync(join(tmpdir(), "meterd-"));
+    const daily = new DailyJsonlLog(dir, "web");
+    const line = { event: "gate_opened" as const, device_id: "d", session_id: "s", bytes_used: 0, allowance_bytes: 0 };
+    daily.write({ ...line, ts: "2026-11-10T23:59:59.000Z" });
+    daily.write({ ...line, ts: "2026-11-11T00:00:00.000Z" });
+    daily.write({ ...line, ts: "2026-11-11T08:00:00.000Z" });
+    expect(readFileSync(join(dir, "web-2026-11-10.jsonl"), "utf8").trimEnd().split("\n")).toHaveLength(1);
+    expect(readFileSync(join(dir, "web-2026-11-11.jsonl"), "utf8").trimEnd().split("\n")).toHaveLength(2);
   });
 });
