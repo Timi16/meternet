@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="data:," />
+    <title>MeterNet Board</title>
+    <meta name="description" content="Every MeterNet session on the public demo: payment hashes, data used and how fast unpaid sessions were cut." />
+    <link rel="preload" href="fonts/big-shoulders-display.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="meter.css" />
+  </head>
+  <body>
+    <header class="stripe">
+      <div class="stripe-inner">
+        <a class="brand" href="./">MeterNet<small>Pay-per-MB · Fiber · CKB<span class="zh">按流量付费</span></small></a>
+        <nav>
+          <span class="badge">Testnet <span class="zh">测试网</span><span class="long"> · no real money</span></span>
+          <a href="./">Meter<span class="zh">计价器</span></a>
+          <a href="dashboard.html" aria-current="page">Board<span class="zh">看板</span></a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero reveal">
+        <h1>The <em>Board.</em></h1>
+        <p class="zh-line">公开看板 · 每一笔付款都可验证</p>
+        <p>
+          Every session on the public demo, live. Device IDs are hashed. Each payment hash has a preimage in the
+          published logs, so anyone can check it was really paid. A cut counts as on time if access closed within
+          15&nbsp;seconds of the paid data running out.
+        </p>
+      </section>
+
+      <section class="totals" aria-label="Totals">
+        <div class="total reveal d1"><div class="lcd"><span class="led" id="t-sessions"></span></div><span class="lcd-label">Sessions<span class="zh">会话</span></span></div>
+        <div class="total reveal d1"><div class="lcd"><span class="led" id="t-payments"></span></div><span class="lcd-label">Payments<span class="zh">付款</span></span></div>
+        <div class="total reveal d2"><div class="lcd"><span class="led" id="t-mb"></span></div><span class="lcd-label">MB metered<span class="zh">计量流量</span></span></div>
+        <div class="total reveal d2"><div class="lcd"><span class="led go" id="t-cuts"></span></div><span class="lcd-label" id="t-cuts-label">Cuts within 15 s</span></div>
+      </section>
+
+      <div class="board-grid">
+        <section class="card reveal d3" aria-labelledby="sessions-title">
+          <p class="kicker" id="updated">Loading…</p>
+          <h2 id="sessions-title">Sessions<span class="zh">会话</span></h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Started</th><th>Device</th><th>Status</th><th>MB used</th><th>Payments</th><th>Median pay</th><th>Cut</th></tr>
+              </thead>
+              <tbody id="rows"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <aside class="card reveal d4" aria-labelledby="feed-title">
+          <p class="kicker">Live</p>
+          <h2 id="feed-title">Meter tape<span class="zh">实时记录</span></h2>
+          <ol class="feed" id="feed" aria-live="polite"><li class="waiting">Waiting for the next payment on the demo…</li></ol>
+          <h2 style="margin-top: 24px">Check it yourself<span class="zh">自行验证</span></h2>
+          <p class="hint">The logs behind this board are published with the evidence. One command checks every preimage against its payment hash:</p>
+          <pre class="cmd">git clone https://github.com/Timi16/meternet
+cd meternet
+node evidence/week-2/verify.mjs</pre>
+        </aside>
+      </div>
+    </main>
+
+    <footer class="site">
+      Open source: <a href="https://github.com/Timi16/meternet">github.com/Timi16/meternet</a> · A Nervos Spark Program project · Testnet only.
+    </footer>
+
+    <script type="module" src="dist/board.js"></script>
+  </body>
+</html>
