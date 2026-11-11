@@ -10,7 +10,9 @@ export const CUTOFF_DEADLINE_MS = 15_000;
 // budget"); retune from the week-3 failure lab measurements.
 export const GRACE_MS = 12_000;
 // Ask for the next invoice once this much allowance is left, so a device
-// that keeps paying never reaches grace.
+// that keeps paying never reaches grace. It must cover the payment round
+// trip at the device's data rate; the web gateway sets its own from its
+// pacing rate (MeterDeps.prefetchRemainingBytes, sessions.ts).
 export const PREFETCH_REMAINING_BYTES = CHUNK_BYTES / 2;
 
 // idle:             no allowance, no invoice outstanding
@@ -54,9 +56,9 @@ export function initialSession(nowMs = 0): MeterSession {
   };
 }
 
-export function needsInvoice(s: MeterSession): boolean {
+export function needsInvoice(s: MeterSession, prefetchRemainingBytes = PREFETCH_REMAINING_BYTES): boolean {
   if (s.state === "cut" || s.pendingInvoices.length > 0) return false;
-  return s.state === "idle" || s.allowanceBytes - s.usedBytes <= PREFETCH_REMAINING_BYTES;
+  return s.state === "idle" || s.allowanceBytes - s.usedBytes <= prefetchRemainingBytes;
 }
 
 // When grace runs out, so the caller can schedule the cut exactly; null
