@@ -1,0 +1,26 @@
+{
+  "name": "meternet-web",
+  "version": "0.0.0",
+  "private": true,
+  "description": "MeterNet browser client: the official fiber-js node paying meterd per 2 MB",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "spike": "node scripts/browser-spike.mjs",
+    "bridge": "node scripts/browser-bridge.mjs"
+  },
+  "dependencies": {
+    "@nervosnetwork/fiber-js": "0.9.1",
+    "hls.js": "1.7.4",
+    "yaml": "2.9.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.1",
+    "playwright-core": "1.65.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}
