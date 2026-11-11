@@ -1,0 +1,55 @@
+# MeterNet public server. install-caddy.sh writes this file to
+# /etc/caddy/Caddyfile with the host name filled in. Caddy gets and renews the
+# TLS certificates itself.
+
+{
+	servers {
+		# No HTTP/3: ufw opens 443/tcp only, and advertising h3 makes browsers
+		# try QUIC on UDP 443 first and wait before falling back.
+		protocols h1 h2
+	}
+}
+
+# Browser (WASM) Fiber nodes can only dial ws/wss. They dial
+# /dns4/fiber.__HOST__/tcp/443/wss/p2p/<peer id>. Caddy terminates TLS and
+# forwards the WebSocket upgrade to FNN's P2P port, which accepts WebSocket on
+# the same TCP port (FNN option fiber-reuse-port-for-websocket, default true).
+# This is the TLS-proxy setup from FNN's docs/fiber-node-wss.md, without the
+# nginx stream split, which only exists to share 443 with raw TCP P2P.
+# TODO(verify): whether a Caddy config reload drops open browser connections.
+fiber.__HOST__ {
+	reverse_proxy 127.0.0.1:8228
+}
+
+# The demo page, meterd's API and dashboard feed, and the metered gateway.
+__HOST__ {
+	header {
+		# fiber-js uses SharedArrayBuffer, which browsers only allow on
+		# cross-origin-isolated pages.
+		Cross-Origin-Opener-Policy "same-origin"
+		Cross-Origin-Embedder-Policy "require-corp"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+	}
+
+	# meterd (localhost only). Caddy sets X-Forwarded-For to the client
+	# address, which meterd uses for its per-address limits.
+	handle /api/* {
+		reverse_proxy 127.0.0.1:8300
+	}
+
+	# Metered content: not compressed, so the bytes meterd counts are the
+	# bytes sent, and flushed as meterd writes them (it paces each session).
+	handle /gw/* {
+		reverse_proxy 127.0.0.1:8300 {
+			flush_interval -1
+		}
+	}
+
+	handle {
+		# The fiber-js bundle is ~14 MB, mostly WASM; compress it for phones.
+		encode zstd gzip
+		root * /srv/meternet/web
+		file_server
+	}
+}
