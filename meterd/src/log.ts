@@ -1,6 +1,7 @@
 // Append-only JSON-lines log. Schema: ARCHITECTURE.md, "Logging schema".
 
 import { appendFileSync } from "node:fs";
+import { join } from "node:path";
 import type { CutReason } from "./meter";
 
 export type LogEvent =
@@ -11,7 +12,12 @@ export type LogEvent =
   | "gate_opened"
   | "grace_started"
   | "gate_close_failed"
-  | "cut";
+  | "cut"
+  | "session_ended";
+
+// Why a session that was not cut ended (session_ended lines). Unpaid
+// sessions are always "cut" lines; these are sessions closed for other reasons.
+export type EndReason = "idle" | "shutdown";
 
 export interface LogLine {
   ts: string;
@@ -31,7 +37,8 @@ export interface LogLine {
   t_gate_closed_ms: number | null;
   bytes_used: number;
   allowance_bytes: number;
-  cutoff_reason: CutReason | null;
+  // cut lines: why the device was cut. session_ended lines: an EndReason.
+  cutoff_reason: CutReason | EndReason | null;
   // On gate_close_failed lines: what the gate reported.
   error: string | null;
 }
@@ -67,6 +74,37 @@ export class JsonlLog implements MeterLog {
 
   write(entry: LogEntry): void {
     appendFileSync(this.path, JSON.stringify(toLine(entry)) + "\n", { flag: "a" });
+  }
+}
+
+// One JSONL file per UTC day, <dir>/<prefix>-YYYY-MM-DD.jsonl, chosen by each
+// line's own timestamp, so the daily export is just the day's file.
+export class DailyJsonlLog implements MeterLog {
+  constructor(
+    readonly dir: string,
+    readonly prefix: string,
+  ) {}
+
+  pathFor(ts: string): string {
+    return join(this.dir, `${this.prefix}-${ts.slice(0, 10)}.jsonl`);
+  }
+
+  write(entry: LogEntry): void {
+    const line = toLine(entry);
+    appendFileSync(this.pathFor(line.ts), JSON.stringify(line) + "\n", { flag: "a" });
+  }
+}
+
+// Writes every line to each log in turn, e.g. the JSONL file and the dashboard.
+export class TeeLog implements MeterLog {
+  private readonly logs: MeterLog[];
+
+  constructor(...logs: MeterLog[]) {
+    this.logs = logs;
+  }
+
+  write(entry: LogEntry): void {
+    for (const log of this.logs) log.write(entry);
   }
 }
 
