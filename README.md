@@ -2,9 +2,9 @@
 
 MeterNet is an open-source hotspot box, a Linux laptop or Raspberry Pi, that sells Wi-Fi by the megabyte over the [Fiber Network](https://github.com/nervosnetwork/fiber) on Nervos CKB **testnet**. A phone joins the hotspot, opens a captive-portal page that runs a Fiber node in the browser, opens a private one-way channel to the box, and pays for data in 2 MB chunks. The phone stays online only while those small payments keep arriving. If they stop, the box cuts the phone off within 15 seconds. The box runs openNDS (captive portal) with a forwarding auth service (FAS), a native Fiber Network Node (FNN), and `meterd`, a small TypeScript daemon that turns paid invoices into byte allowances.
 
-**Status: Week 1 in progress. Nothing works end to end yet.**
+**Status: Week 2 in progress. The public demo is up at https://162-35-126-18.sslip.io; phone testing and the `v0.1` tag are next.**
 
-`meterd` has its state machine, an FNN JSON-RPC client and a per-device meter loop, all tested against a mocked FNN. FNN v0.9.1 and meterd run on the public server, installed with [deploy/server/install-fnn.sh](deploy/server/install-fnn.sh) and [deploy/server/sync-meterd.sh](deploy/server/sync-meterd.sh). Real testnet chunk payments have gone through it end to end, from a payer node in Lagos. The server moved from AWS (eu-north-1, arm64) to an InterServer VPS (x86_64) on 2026-11-08, and the payment was repeated there. The browser client, the metered gateway, the public wss endpoint and openNDS integration are not built yet.
+`meterd` has its state machine, an FNN JSON-RPC client and a per-device meter loop, all tested against a mocked FNN. FNN v0.9.1 and meterd run on the public server, installed with [deploy/server/install-fnn.sh](deploy/server/install-fnn.sh) and [deploy/server/sync-meterd.sh](deploy/server/sync-meterd.sh). Real testnet chunk payments have gone through it end to end, from a payer node in Lagos. The server moved from AWS (eu-north-1, arm64) to an InterServer VPS (x86_64) on 2026-11-08, and the payment was repeated there. Week 2 is in progress. The public wss endpoint is live at `wss://fiber.162-35-126-18.sslip.io` (Caddy TLS in front of FNN, [deploy/server/install-caddy.sh](deploy/server/install-caddy.sh)), and the official fiber-js 0.9.1 browser node has used it to open a channel and pay. The web MVP's server side runs on the public server: meterd's sessions API, the metered HTTP gateway (MeterNet's own test files and a test video in ~2 MB HLS segments, paced per session, never past the paid allowance) and the dashboard's data feed ([ARCHITECTURE.md, "Public web MVP"](ARCHITECTURE.md#public-web-mvp)). In test runs through the public URL, a browser node paid as it downloaded, stopped paying, and was cut 12 s after its allowance ran out, with no unpaid bytes ([evidence/week-2/](evidence/week-2/)). The pages are up too: [the Meter](https://162-35-126-18.sslip.io/) (board, ride, stop paying, see the cut, leave feedback) and [the Board](https://162-35-126-18.sslip.io/dashboard.html) (every session's payment hashes and cut times, live). openNDS integration (the hotspot box) is week 3.
 
 ## How it works (planned)
 
@@ -51,7 +51,10 @@ These are what the grant work sets out to test. None of them has been measured y
 README.md            this file
 ARCHITECTURE.md      components, sequence diagram, failure scenarios, logging schema
 FIBER_NOTES.md       log of FNN / Fiber WASM bugs and gaps
-meterd/              TypeScript meter daemon (state-machine skeleton + vitest)
+meterd/              TypeScript meter daemon (state machine, FNN client, meter loop + vitest)
+web/                 browser client: the official fiber-js node, bundled with esbuild
+deploy/server/       public server setup: FNN, Caddy (TLS + wss), meterd and web sync
+evidence/            raw logs and checks behind each weekly update
 docker-compose.yml   placeholder, not runnable yet
 ```
 
@@ -63,7 +66,7 @@ npm test
 
 ## Links
 
-- Spark grant proposal thread: `<Talk thread link>`
+- Spark grant proposal thread: https://talk.nervos.org/t/spark-program-meternet-pay-per-mb-wi-fi-hotspots-metered-by-fiber-payments/11041
 
 ## License
 
