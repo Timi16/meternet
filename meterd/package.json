@@ -6,6 +6,7 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
+    "start": "tsx src/main.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "e2e": "tsx scripts/testnet-e2e.ts",
