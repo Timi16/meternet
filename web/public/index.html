@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="data:," />
+    <title>MeterNet Meter</title>
+    <meta name="description" content="Pay-per-MB data metered by Fiber payments on CKB testnet. Pay as you go; stop paying and the meter cuts you off within 15 seconds." />
+    <link rel="preload" href="fonts/big-shoulders-display.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="meter.css" />
+  </head>
+  <body>
+    <header class="stripe">
+      <div class="stripe-inner">
+        <a class="brand" href="./">MeterNet<small>Pay-per-MB · Fiber · CKB<span class="zh">按流量付费</span></small></a>
+        <nav>
+          <span class="badge">Testnet <span class="zh">测试网</span><span class="long"> · no real money</span></span>
+          <a href="./" aria-current="page">Meter<span class="zh">计价器</span></a>
+          <a href="dashboard.html">Board<span class="zh">看板</span></a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero reveal">
+        <h1>A taxi meter <em>for data.</em></h1>
+        <p class="zh-line">流量计价器 · 付多少，用多少</p>
+        <p>
+          Your browser runs its own Fiber node and pays for every 2&nbsp;MB as it arrives. Keep paying and the data
+          keeps flowing. Stop, and the meter cuts you off within 15&nbsp;seconds. Every payment hash lands on the
+          <a href="dashboard.html">public board</a>.
+        </p>
+      </section>
+
+      <div class="ride-grid">
+        <div class="left-col">
+          <!-- Boarding: wallet, fuel, channel -->
+          <section class="card reveal d1" id="boarding" aria-labelledby="boarding-title">
+            <p class="kicker">Before the ride</p>
+            <h2 id="boarding-title">Board in three steps<span class="zh">三步上车</span></h2>
+            <ol class="steps">
+              <li class="step" id="step-wallet" data-state="active">
+                <span class="num">1</span>
+                <div>
+                  <h3>Start your wallet<span class="zh">启动钱包</span></h3>
+                  <div class="detail" id="wallet-detail">Downloading the browser Fiber node (about 7&nbsp;MB)…</div>
+                  <div class="progress" id="wallet-progress"><i></i></div>
+                </div>
+              </li>
+              <li class="step" id="step-fund" data-state="todo">
+                <span class="num">2</span>
+                <div>
+                  <h3>Get test CKB<span class="zh">领取测试币</span></h3>
+                  <div class="detail" id="fund-detail">Free testnet coins from the Nervos faucet. Nothing here is real money.</div>
+                  <div class="actions hidden" id="fund-actions">
+                    <code class="address" id="address"></code>
+                    <button class="btn" id="copy-address" type="button">Copy address</button>
+                    <a class="btn primary" href="https://faucet.nervos.org/" target="_blank" rel="noopener">Open faucet ↗</a>
+                  </div>
+                </div>
+              </li>
+              <li class="step" id="step-channel" data-state="todo">
+                <span class="num">3</span>
+                <div>
+                  <h3>Open your channel<span class="zh">打开通道</span></h3>
+                  <div class="detail" id="channel-detail">One private payment channel to the MeterNet node, 200 test CKB. You open it once and reuse it every visit.</div>
+                  <div class="actions hidden" id="channel-actions">
+                    <button class="btn primary" id="open-channel" type="button">Open channel</button>
+                  </div>
+                </div>
+              </li>
+            </ol>
+          </section>
+
+          <!-- The ride: pick content, watch it flow -->
+          <section class="card reveal d2 hidden" id="ride" aria-labelledby="ride-title">
+            <p class="kicker" id="ride-kicker">Ready</p>
+            <h2 id="ride-title">Pick your ride</h2>
+            <div class="choose" id="choose">
+              <button class="choice" type="button" data-kind="video"><b>▶ Video<span class="zh">视频</span></b><span>A 104&nbsp;s test pattern, 2&nbsp;MB per 13&nbsp;s</span></button>
+              <button class="choice" type="button" data-kind="download"><b>⬇ Download<span class="zh">下载</span></b><span>A 50&nbsp;MB test file, metered 2&nbsp;MB at a time</span></button>
+            </div>
+            <div class="screen hidden" id="screen">
+              <video id="video" playsinline muted controls></video>
+              <div class="hidden" id="download">
+                <div class="dl-name">test-50MB.bin</div>
+                <div class="dl-bar"><i id="dl-fill"></i></div>
+                <div class="dl-meta"><span id="dl-got">0.0 MB</span><span id="dl-rate">waiting for the first payment</span></div>
+              </div>
+              <div class="overlay hidden" id="overlay"></div>
+            </div>
+            <p class="hint" id="ride-hint">Choose one. Payments start as soon as you do.</p>
+          </section>
+
+          <!-- After the cut -->
+          <section class="card result reveal hidden" id="result" aria-live="polite">
+            <p class="kicker">Ride over</p>
+            <p class="big" id="result-big">Stopped</p>
+            <p class="verdict" id="result-verdict"></p>
+            <p class="hint" id="result-detail"></p>
+            <div class="drive">
+              <button class="btn primary" id="ride-again" type="button">Ride again · same channel</button>
+              <a class="btn" href="dashboard.html">See it on the Board</a>
+            </div>
+
+            <form class="fb" id="fb">
+              <p class="kicker">30 seconds of feedback · no personal data</p>
+              <fieldset>
+                <legend>Was it clear what you were paying for?<span class="zh">是否清楚自己在为什么付费？</span></legend>
+                <div class="pills" data-name="clear"></div>
+              </fieldset>
+              <fieldset>
+                <legend>Did the data flow smoothly while you paid?<span class="zh">付费期间数据是否流畅？</span></legend>
+                <div class="pills" data-name="smooth"></div>
+              </fieldset>
+              <fieldset>
+                <legend>Would you use pay-per-MB Wi-Fi like this?<span class="zh">你会使用这种按流量付费的 Wi-Fi 吗？</span></legend>
+                <div class="pills" data-name="would_use" data-options="yes,maybe,no"></div>
+              </fieldset>
+              <label>Anything else? <span class="hint">(optional)</span>
+                <textarea id="fb-comment" maxlength="500"></textarea>
+              </label>
+              <div><button class="btn primary" type="submit">Send feedback</button> <span class="hint" id="fb-status"></span></div>
+            </form>
+          </section>
+        </div>
+
+        <aside class="meter-col reveal d3" aria-label="The meter">
+          <div class="meter">
+            <div class="flag" id="flag" data-pos="up" aria-hidden="true"><div class="plate" id="flag-text">空车</div><div class="pole"></div></div>
+            <div class="meter-top">
+              <span class="engrave">MeterNet<span class="zh">计价器</span></span>
+              <span class="lamp" id="lamp" title="Meter status"></span>
+            </div>
+            <div class="lcd">
+              <div class="readout"><span class="led big" id="led-used"></span><span class="unit">MB</span></div>
+              <div class="readout-label"><span class="lcd-label">Data used<span class="zh">已用</span></span><span class="lcd-label" id="ride-no"></span></div>
+            </div>
+            <div class="subs">
+              <div class="sub"><span class="led small" id="led-paid"></span><span class="lcd-label">Paid MB<span class="zh">已付</span></span></div>
+              <div class="sub"><span class="led small" id="led-ckb"></span><span class="lcd-label">CKB spent<span class="zh">花费</span></span></div>
+              <div class="sub"><span class="led small" id="led-count"></span><span class="lcd-label">Payments<span class="zh">笔数</span></span></div>
+            </div>
+            <div class="tape" id="tape" aria-hidden="true"></div>
+            <div class="message" id="message" role="status" aria-live="polite">Waiting for your wallet</div>
+            <div class="keys">
+              <button class="key stop hidden" id="stop" type="button">Stop paying<span class="zh">停止付款</span></button>
+            </div>
+          </div>
+
+          <div class="receipt" aria-label="Payment receipt">
+            <header><b>RECEIPT<span class="zh">收据</span></b><span>MeterNet · CKB testnet · 0.1 CKB per 2 MB</span></header>
+            <ol id="receipt"><li class="empty">No payments yet</li></ol>
+          </div>
+        </aside>
+      </div>
+    </main>
+
+    <footer class="site">
+      Open source: <a href="https://github.com/Timi16/meternet">github.com/Timi16/meternet</a> ·
+      A Nervos Spark Program project · Testnet only.
+      <a href="spike.html">Connection test</a>
+    </footer>
+
+    <script type="module" src="dist/demo.js"></script>
+  </body>
+</html>
