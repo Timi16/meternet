@@ -20,4 +20,7 @@ rsync -az --delete -e "ssh -i $SSH_KEY -o ConnectTimeout=10" \
   npm ci --silent --no-audit --no-fund
   npm test 2>&1 | grep -E "Tests|FAIL"
   npx tsc --noEmit && echo "typecheck ok"
-  echo "fnn: $(systemctl is-active fnn)"'
+  echo "fnn: $(systemctl is-active fnn)"
+  if systemctl is-enabled meterd >/dev/null 2>&1; then
+    sudo systemctl restart meterd && sleep 2 && echo "meterd: $(systemctl is-active meterd)"
+  fi'
