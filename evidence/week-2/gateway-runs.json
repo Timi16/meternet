@@ -1,0 +1,678 @@
+[
+  {
+    "session_id": "73b8177d-c92b-4791-b099-550f106c1ef4",
+    "file": "files/test-10MB.bin",
+    "outcome": "completed",
+    "received_bytes": 10485760,
+    "payments": [
+      {
+        "payment_hash": "0x8532a51c6664a57c802a88c46d56fe5674220f8bc8465fc9fe947cd566e9278c",
+        "sent_at_ms": 2087,
+        "send_payment_ms": 179
+      },
+      {
+        "payment_hash": "0xecab5828ff2fe17895e49adc8e707a6e678601a8b87315fbef91b47cbd3d48eb",
+        "sent_at_ms": 5299,
+        "send_payment_ms": 120
+      },
+      {
+        "payment_hash": "0x8e3e9095c79bdd3a8aa17218d6529b801cd1b1713138f5095dd7663680b2861a",
+        "sent_at_ms": 7855,
+        "send_payment_ms": 136
+      },
+      {
+        "payment_hash": "0xf31b4bc84bee4feb969ede2fecc138177e3a1e849d8913ec54957da71e121bad",
+        "sent_at_ms": 9657,
+        "send_payment_ms": 55
+      }
+    ],
+    "gate_opened_at_ms": 3529,
+    "stopped_paying_at_ms": 9642,
+    "last_payment_sent_at_ms": 9657,
+    "download_ended_at_ms": 13709,
+    "ended_after_last_payment_ms": 4052,
+    "meterd": {
+      "status": "grace",
+      "bytes_used": 10485760,
+      "allowance_bytes": 8388608,
+      "cut": null
+    },
+    "gateway_after_cut_status": 200,
+    "phase": "A: before the fix (1 MiB/s, gateway served during grace)"
+  },
+  {
+    "session_id": "73dc4172-271f-42d9-89fb-8888f1d57833",
+    "file": "files/test-10MB.bin",
+    "outcome": "cut (UND_ERR_SOCKET)",
+    "received_bytes": 8388608,
+    "payments": [
+      {
+        "payment_hash": "0x6205ef37c77ac7dbbf1dd15d4fbbd3efcd61f6b05013dc0c796e99365b52394d",
+        "sent_at_ms": 1987,
+        "send_payment_ms": 36
+      },
+      {
+        "payment_hash": "0xd140b637c3e0760917a25e987eeaca2be57fc5cb7bd7d0a0d777d9df4cba898a",
+        "sent_at_ms": 5006,
+        "send_payment_ms": 69
+      },
+      {
+        "payment_hash": "0x66f91623cd063de826473ddce79d2aa278385da52f4b4fbd95ae3e65454fa8d4",
+        "sent_at_ms": 7379,
+        "send_payment_ms": 43
+      },
+      {
+        "payment_hash": "0xda1712c887ebe7380a04914f59481fcc063f749ff428af8f7c4cd48becd06b0c",
+        "sent_at_ms": 9801,
+        "send_payment_ms": 66
+      }
+    ],
+    "gate_opened_at_ms": 3364,
+    "stopped_paying_at_ms": 10342,
+    "last_payment_sent_at_ms": 9801,
+    "last_byte_at_ms": 12606,
+    "download_ended_at_ms": 24604,
+    "data_stopped_after_last_payment_ms": 2805,
+    "ended_after_last_payment_ms": 14803,
+    "meterd": {
+      "status": "cut",
+      "bytes_used": 8388608,
+      "allowance_bytes": 8388608,
+      "cut": {
+        "reason": "grace_expired",
+        "t_exhausted_ms": 1794297453048,
+        "t_gate_closed_ms": 1794297465049,
+        "cutoff_ms": 12001,
+        "within_deadline": true
+      }
+    },
+    "paid_bytes": 8388608,
+    "unpaid_bytes_received": 0,
+    "gateway_after_cut_status": 402,
+    "phase": "B: hold at allowance, 1 MiB/s, prefetch 1 MB (stalls at chunk boundaries)"
+  },
+  {
+    "session_id": "3967d163-c986-4166-a92e-a5f45794e9a0",
+    "file": "files/test-10MB.bin",
+    "outcome": "cut (UND_ERR_SOCKET)",
+    "received_bytes": 8388608,
+    "payments": [
+      {
+        "payment_hash": "0x442e81ca1b8ca09bc7a2aad19c73789801372cdf715d73a80fa0a6871ab341d7",
+        "sent_at_ms": 2186,
+        "send_payment_ms": 113
+      },
+      {
+        "payment_hash": "0x11642b4a98ca302ee83be37e98a19696237afe285e4a5ba91a6afc70f4529304",
+        "sent_at_ms": 5220,
+        "send_payment_ms": 51
+      },
+      {
+        "payment_hash": "0x61272e936958d4a92fa9cafe724147dcbb5081dc72cd96ab8ca70dd7f3971bf4",
+        "sent_at_ms": 7884,
+        "send_payment_ms": 36
+      },
+      {
+        "payment_hash": "0xe63657cae674c4d75583553df131ecc51f05beed897d205fac46f854717c007f",
+        "sent_at_ms": 10259,
+        "send_payment_ms": 46
+      }
+    ],
+    "gate_opened_at_ms": 3598,
+    "stopped_paying_at_ms": 10959,
+    "last_payment_sent_at_ms": 10259,
+    "last_byte_at_ms": 13243,
+    "download_ended_at_ms": 25222,
+    "data_stopped_after_last_payment_ms": 2984,
+    "ended_after_last_payment_ms": 14963,
+    "meterd": {
+      "status": "cut",
+      "bytes_used": 8388608,
+      "allowance_bytes": 8388608,
+      "cut": {
+        "reason": "grace_expired",
+        "t_exhausted_ms": 1794297481000,
+        "t_gate_closed_ms": 1794297493001,
+        "cutoff_ms": 12001,
+        "within_deadline": true
+      }
+    },
+    "paid_bytes": 8388608,
+    "unpaid_bytes_received": 0,
+    "gateway_after_cut_status": 402,
+    "phase": "B: hold at allowance, 1 MiB/s, prefetch 1 MB (stalls at chunk boundaries)"
+  },
+  {
+    "session_id": "c3186e4f-fab0-4ead-af51-198d07056bfd",
+    "file": "files/test-10MB.bin",
+    "outcome": "completed",
+    "received_bytes": 10485760,
+    "payments": [
+      {
+        "payment_hash": "0xd87afb8e936a15150dbb796f8ed17707eaa46db2dbf2a55c467db7324813fa0a",
+        "sent_at_ms": 2107,
+        "send_payment_ms": 40
+      },
+      {
+        "payment_hash": "0x351ba55399f5745a2749b319319d6e9f1604c54f03d228a672e3accbd039d593",
+        "sent_at_ms": 5059,
+        "send_payment_ms": 59
+      },
+      {
+        "payment_hash": "0xe7222407ee2b808892bc3c954524ef883eebbc6d630eaa467e13f89d0e107733",
+        "sent_at_ms": 7471,
+        "send_payment_ms": 35
+      },
+      {
+        "payment_hash": "0x7fc05dba45823f061b885d9b0ab8039ab33c1d28cd3b493607e52fb076ceaf9a",
+        "sent_at_ms": 9810,
+        "send_payment_ms": 30
+      },
+      {
+        "payment_hash": "0x5b97f492029d863dd49389e311f205caeef26e3022b6d178609386d981db7b27",
+        "sent_at_ms": 14041,
+        "send_payment_ms": 145
+      }
+    ],
+    "gate_opened_at_ms": 3512,
+    "stopped_paying_at_ms": 13639,
+    "last_payment_sent_at_ms": 14041,
+    "last_byte_at_ms": 17647,
+    "download_ended_at_ms": 17647,
+    "data_stopped_after_last_payment_ms": 3606,
+    "ended_after_last_payment_ms": 3606,
+    "meterd": {
+      "status": "cut",
+      "bytes_used": 10485760,
+      "allowance_bytes": 10485760,
+      "cut": {
+        "reason": "grace_expired",
+        "t_exhausted_ms": 1794297513118,
+        "t_gate_closed_ms": 1794297525119,
+        "cutoff_ms": 12001,
+        "within_deadline": true
+      }
+    },
+    "paid_bytes": 10485760,
+    "unpaid_bytes_received": 0,
+    "gateway_after_cut_status": 402,
+    "phase": "B: hold at allowance, 1 MiB/s, prefetch 1 MB (stalls at chunk boundaries)"
+  },
+  {
+    "session_id": "6bd4ac78-34eb-4d61-b72a-ba4576ccbade",
+    "file": "files/test-50MB.bin",
+    "outcome": "cut (UND_ERR_SOCKET)",
+    "received_bytes": 16777216,
+    "payments": [
+      {
+        "payment_hash": "0xc7ea3bbad76a784e4873089f47a4062710265a149898d3e19d16a510297f2796",
+        "sent_at_ms": 1988,
+        "send_payment_ms": 51
+      },
+      {
+        "payment_hash": "0xe159dd7b520172e0984695fa3f67bfe9e54fe894c6141799c181c7a1f6d2f3a8",
+        "sent_at_ms": 3890,
+        "send_payment_ms": 36
+      },
+      {
+        "payment_hash": "0x0c0cf018221df82a6a3ff4caba5755de3e8dc145cfdaf1f7eb6cf1345ce61df9",
+        "sent_at_ms": 5768,
+        "send_payment_ms": 36
+      },
+      {
+        "payment_hash": "0x7bd337eae961da811b5b89a0851c569fa64d36d6e5eeb2b97d552f87f72f7376",
+        "sent_at_ms": 7658,
+        "send_payment_ms": 34
+      },
+      {
+        "payment_hash": "0x8d802e4057dd2d70c53806b6f68ae02e09623246672e1b99563c2612839db6e0",
+        "sent_at_ms": 10124,
+        "send_payment_ms": 46
+      },
+      {
+        "payment_hash": "0xfaecf40d385a9aad84f5c840ce04325fd59e74b66761f7342319b3eec7d0e3b1",
+        "sent_at_ms": 11994,
+        "send_payment_ms": 42
+      },
+      {
+        "payment_hash": "0x605a2fba16c1c48bb191a7402746136caf3315a170fb1739f9b192ee053e1f89",
+        "sent_at_ms": 13807,
+        "send_payment_ms": 42
+      },
+      {
+        "payment_hash": "0xc244e481e5c418d19b338e39ea8a59f0e856449f9a2da767d97eec2a04e073b0",
+        "sent_at_ms": 18966,
+        "send_payment_ms": 79
+      }
+    ],
+    "gate_opened_at_ms": 3523,
+    "stopped_paying_at_ms": 20149,
+    "last_payment_sent_at_ms": 18966,
+    "last_byte_at_ms": 54574,
+    "download_ended_at_ms": 54608,
+    "data_stopped_after_last_payment_ms": 35608,
+    "ended_after_last_payment_ms": 35642,
+    "meterd": {
+      "status": "cut",
+      "bytes_used": 16777216,
+      "allowance_bytes": 16777216,
+      "cut": {
+        "reason": "grace_expired",
+        "t_exhausted_ms": 1794297818006,
+        "t_gate_closed_ms": 1794297830007,
+        "cutoff_ms": 12001,
+        "within_deadline": true
+      }
+    },
+    "paid_bytes": 16777216,
+    "unpaid_bytes_received": 0,
+    "gateway_after_cut_status": 402,
+    "phase": "C: hold at allowance, 1 MiB/s, prefetch 2 MB (paid data buffered on a slow link)"
+  },
+  {
+    "session_id": "d58d90d7-3da8-4499-a4fc-e841ea8376a8",
+    "file": "files/test-50MB.bin",
+    "outcome": "cut (UND_ERR_SOCKET)",
+    "received_bytes": 16777216,
+    "payments": [
+      {
+        "payment_hash": "0x65ce7fb95c2c0bf081980af576761aec784be04d85f5201f18947a2ef1dbbbfc",
+        "sent_at_ms": 1901,
+        "send_payment_ms": 42
+      },
+      {
+        "payment_hash": "0xc722c84fccc1b96ddf39805a1ce6eaea7e3326dad44b2a49d713fb399828d328",
+        "sent_at_ms": 3159,
+        "send_payment_ms": 101
+      },
+      {
+        "payment_hash": "0x33bb4fcc0946e98c173a8dcd62fef6a220daa96210255596bc5e6000ad90d198",
+        "sent_at_ms": 5703,
+        "send_payment_ms": 51
+      },
+      {
+        "payment_hash": "0x358a3602d02c9b082457a7d59f8a36c9228328b174f58cd8253399d111958866",
+        "sent_at_ms": 7455,
+        "send_payment_ms": 49
+      },
+      {
+        "payment_hash": "0x67ec64ce125245480f2f0183df057810ae3bcc0940b9d7861aa1da29b5f00461",
+        "sent_at_ms": 9801,
+        "send_payment_ms": 51
+      },
+      {
+        "payment_hash": "0x35966c269ca725d48bf865ac9e1cd0c476816b3b347728a44ad281d83e18ffb1",
+        "sent_at_ms": 11651,
+        "send_payment_ms": 34
+      },
+      {
+        "payment_hash": "0xd04279703c383a3f1066c54c509e4a7ebe5cd7c751989f8ffaa371f42f8087d6",
+        "sent_at_ms": 13440,
+        "send_payment_ms": 44
+      },
+      {
+        "payment_hash": "0x54c508641a89dd7fea239268d0c18f1ced03c9d9db3ae4123803e512dd9b3abc",
+        "sent_at_ms": 15537,
+        "send_payment_ms": 43
+      }
+    ],
+    "gate_opened_at_ms": 3347,
+    "stopped_paying_at_ms": 16881,
+    "last_payment_sent_at_ms": 15537,
+    "last_byte_at_ms": 23481,
+    "download_ended_at_ms": 31385,
+    "data_stopped_after_last_payment_ms": 7944,
+    "ended_after_last_payment_ms": 15848,
+    "meterd": {
+      "status": "cut",
+      "bytes_used": 16777216,
+      "allowance_bytes": 16777216,
+      "cut": {
+        "reason": "grace_expired",
+        "t_exhausted_ms": 1794297862572,
+        "t_gate_closed_ms": 1794297874573,
+        "cutoff_ms": 12001,
+        "within_deadline": true
+      }
+    },
+    "paid_bytes": 16777216,
+    "unpaid_bytes_received": 0,
+    "gateway_after_cut_status": 402,
+    "phase": "C: hold at allowance, 1 MiB/s, prefetch 2 MB (paid data buffered on a slow link)"
+  },
+  {
+    "session_id": "70442367-62d9-441c-a208-4e029f104b93",
+    "file": "files/test-50MB.bin",
+    "outcome": "cut (UND_ERR_SOCKET)",
+    "received_bytes": 10485760,
+    "payments": [
+      {
+        "payment_hash": "0x1a92e70f8f3720e29dd6c2a5eb2e4b7bb9dc025479de6ede4a39b1154030c116",
+        "sent_at_ms": 2127,
+        "send_payment_ms": 50
+      },
+      {
+        "payment_hash": "0x6036f45e83721538df71bff7689c6aa45c1694c3e348d12f984a5615218cdd6b",
+        "sent_at_ms": 4058,
+        "send_payment_ms": 39
+      },
+      {
+        "payment_hash": "0x28c5fdf5fd3c49162467795dd4c7421a36f13e80f8e937b821fc3044555cc4a2",
+        "sent_at_ms": 5838,
+        "send_payment_ms": 43
+      },
+      {
+        "payment_hash": "0x6e256852e178b4815ac521f4907d7259f57868bc22a6695a7ad9c3e0c89d1c5d",
+        "sent_at_ms": 7797,
+        "send_payment_ms": 40
+      },
+      {
+        "payment_hash": "0x2e0bafae0f2045c2a7769fec57ccb24fc02657dbd65750269034dd01ad1a4aa4",
+        "sent_at_ms": 9802,
+        "send_payment_ms": 36
+      }
+    ],
+    "gate_opened_at_ms": 3609,
+    "stopped_paying_at_ms": 10089,
+    "last_payment_sent_at_ms": 9802,
+    "last_byte_at_ms": 13672,
+    "download_ended_at_ms": 25745,
+    "data_stopped_after_last_payment_ms": 3870,
+    "ended_after_last_payment_ms": 15943,
+    "meterd": {
+      "status": "cut",
+      "bytes_used": 10485760,
+      "allowance_bytes": 10485760,
+      "cut": {
+        "reason": "grace_expired",
+        "t_exhausted_ms": 1794297890954,
+        "t_gate_closed_ms": 1794297902956,
+        "cutoff_ms": 12002,
+        "within_deadline": true
+      }
+    },
+    "paid_bytes": 10485760,
+    "unpaid_bytes_received": 0,
+    "gateway_after_cut_status": 402,
+    "phase": "C: hold at allowance, 1 MiB/s, prefetch 2 MB (paid data buffered on a slow link)"
+  },
+  {
+    "session_id": "d821116a-50bb-48f2-8f60-505598b197a5",
+    "file": "files/test-50MB.bin",
+    "outcome": "cut (UND_ERR_SOCKET)",
+    "received_bytes": 8388608,
+    "payments": [
+      {
+        "payment_hash": "0xbef4715092ec6b3afa63ce5e450163ef6e4177a44382af32bf274fb3a63ee615",
+        "sent_at_ms": 1949,
+        "send_payment_ms": 75
+      },
+      {
+        "payment_hash": "0x6f300f72445d0fcbcc5bc140573b1cbfda99d0b6b94fb3326eefa6a23551c3dd",
+        "sent_at_ms": 8230,
+        "send_payment_ms": 71
+      },
+      {
+        "payment_hash": "0x0b018cfa72ce69a7c6ec3156eb34b8c89d09ceef38a3034ac6f760d27517c1d8",
+        "sent_at_ms": 15734,
+        "send_payment_ms": 70
+      },
+      {
+        "payment_hash": "0xe63b8b7a8f6f83226c0abe0165aefaf56f8b1067b543e462d9056243319f2c1f",
+        "sent_at_ms": 24092,
+        "send_payment_ms": 62
+      }
+    ],
+    "gate_opened_at_ms": 3325,
+    "stopped_paying_at_ms": 26711,
+    "last_payment_sent_at_ms": 24092,
+    "last_byte_at_ms": 34647,
+    "download_ended_at_ms": 46619,
+    "data_stopped_after_last_payment_ms": 10555,
+    "ended_after_last_payment_ms": 22527,
+    "meterd": {
+      "status": "cut",
+      "bytes_used": 8388608,
+      "allowance_bytes": 8388608,
+      "cut": {
+        "reason": "grace_expired",
+        "t_exhausted_ms": 1794298331986,
+        "t_gate_closed_ms": 1794298343987,
+        "cutoff_ms": 12001,
+        "within_deadline": true
+      }
+    },
+    "paid_bytes": 8388608,
+    "unpaid_bytes_received": 0,
+    "gateway_after_cut_status": 402,
+    "phase": "C2: 256 KiB/s, prefetch 3 s, payer did not wait for each payment to settle"
+  },
+  {
+    "session_id": "ce01f7b5-cf20-4ff3-b6eb-73d31f5ebe90",
+    "file": "files/test-50MB.bin",
+    "outcome": "cut (UND_ERR_SOCKET)",
+    "received_bytes": 8388608,
+    "payments": [
+      {
+        "payment_hash": "0xc22d9dacf4f5c4abcd8af9101d386215748f5b11cc6fe9173ea338ff84307f4e",
+        "sent_at_ms": 1816,
+        "send_payment_ms": 37
+      },
+      {
+        "payment_hash": "0x4feefd1db62af61d22b5db7025c367a2486c5df2fd2ff7fc87248ab14e19d434",
+        "sent_at_ms": 8161,
+        "send_payment_ms": 52
+      },
+      {
+        "payment_hash": "0x036f13ee8a770244a53ce24cc6a70d2c3fb1d87c3cb5af9e858725bba3835367",
+        "sent_at_ms": 15865,
+        "send_payment_ms": 72
+      },
+      {
+        "payment_hash": "0x231e5a99087d16d1a248705bf8339617158b255cc7dfab399832f32eff5fc9b9",
+        "sent_at_ms": 23680,
+        "send_payment_ms": 93
+      }
+    ],
+    "gate_opened_at_ms": 3242,
+    "stopped_paying_at_ms": 26517,
+    "last_payment_sent_at_ms": 23680,
+    "last_byte_at_ms": 34552,
+    "download_ended_at_ms": 46586,
+    "data_stopped_after_last_payment_ms": 10872,
+    "ended_after_last_payment_ms": 22906,
+    "meterd": {
+      "status": "cut",
+      "bytes_used": 8388608,
+      "allowance_bytes": 8388608,
+      "cut": {
+        "reason": "grace_expired",
+        "t_exhausted_ms": 1794298381361,
+        "t_gate_closed_ms": 1794298393361,
+        "cutoff_ms": 12000,
+        "within_deadline": true
+      }
+    },
+    "paid_bytes": 8388608,
+    "unpaid_bytes_received": 0,
+    "gateway_after_cut_status": 402,
+    "phase": "C2: 256 KiB/s, prefetch 3 s, payer did not wait for each payment to settle"
+  },
+  {
+    "phase": "C2: 256 KiB/s, prefetch 3 s, payer did not wait for each payment to settle",
+    "session_id": "38fe5fa8-06b7-41fa-9ac2-575648ac8bd0",
+    "outcome": "failed: gate not open within the script's 60 s",
+    "note": "FIBER_NOTES F-005: payment 0x321c14e3a6b9fdcba404170e452cc1d4979546ed025d8d5dcb16e119f2f77779 was sent just as the channel was re-established. Its TLC reached the server FNN ~88 s later; the invoice was then Paid (90,188 ms after it was created) and meterd opened the gate, after the script had given up."
+  },
+  {
+    "session_id": "9a5ec336-93d8-459c-a660-b6a7e94f27f6",
+    "file": "files/test-50MB.bin",
+    "outcome": "cut (UND_ERR_SOCKET)",
+    "received_bytes": 8388608,
+    "payments": [
+      {
+        "payment_hash": "0xc2328ad6f4a2c09c2382ea341971c71cac906cf4815bdc309444cd1eeab53269",
+        "sent_at_ms": 2173,
+        "outcome": "Success",
+        "settle_ms": 1613
+      },
+      {
+        "payment_hash": "0xa4b9331876ef8c52841ad89fa5e70c34929c7d807357f3e1da11005b63f2631d",
+        "sent_at_ms": 8982,
+        "outcome": "Success",
+        "settle_ms": 1171
+      },
+      {
+        "payment_hash": "0xb609cb90a1f802865c9e812a1d1c34080effad6433e67f6727cf12235210aefc",
+        "sent_at_ms": 16928,
+        "outcome": "Success",
+        "settle_ms": 1115
+      },
+      {
+        "payment_hash": "0xcb2a339b830e171cf3daf193e1e1f9971b2153c31f387c3f715137baeac8dc66",
+        "sent_at_ms": 24878,
+        "outcome": "Success",
+        "settle_ms": 1133
+      }
+    ],
+    "replacements": 0,
+    "gate_opened_at_ms": 4394,
+    "stopped_paying_at_ms": 27723,
+    "last_payment_sent_at_ms": 24878,
+    "last_byte_at_ms": 35679,
+    "download_ended_at_ms": 47667,
+    "data_stopped_after_last_payment_ms": 10801,
+    "ended_after_last_payment_ms": 22789,
+    "meterd": {
+      "status": "cut",
+      "bytes_used": 8388608,
+      "allowance_bytes": 8388608,
+      "cut": {
+        "reason": "grace_expired",
+        "t_exhausted_ms": 1794298835383,
+        "t_gate_closed_ms": 1794298847384,
+        "cutoff_ms": 12001,
+        "within_deadline": true
+      }
+    },
+    "paid_bytes": 8388608,
+    "unpaid_bytes_received": 0,
+    "gateway_after_cut_status": 402,
+    "phase": "D: final (256 KiB/s, prefetch 3 s, one payment in flight)",
+    "note": "The script then also had a stuck-payment replace step; it never triggered (replacements 0) and was removed afterwards, see FIBER_NOTES F-005."
+  },
+  {
+    "session_id": "9fa6e965-41e7-4726-8ab0-42ff9bbc2af7",
+    "file": "files/test-50MB.bin",
+    "outcome": "cut (UND_ERR_SOCKET)",
+    "received_bytes": 8388608,
+    "payments": [
+      {
+        "payment_hash": "0x11833bcc746a677e13d5c6a693ca48dfb53c77cda8c489f0ff72e5149d9d845d",
+        "sent_at_ms": 1925,
+        "outcome": "Success",
+        "settle_ms": 1135
+      },
+      {
+        "payment_hash": "0xd018ca4901015bb7f2fee99369687944fe3f1af69f15f3e318f650054edadc24",
+        "sent_at_ms": 8156,
+        "outcome": "Success",
+        "settle_ms": 1115
+      },
+      {
+        "payment_hash": "0x4bd493846f6c1ced000e087f547041276a1fc67c252b8128af587426dde057be",
+        "sent_at_ms": 15875,
+        "outcome": "Success",
+        "settle_ms": 1106
+      },
+      {
+        "payment_hash": "0x08c86fbaaef811e8426d96e3186362703349dbf4336b67d54844c61bfa665339",
+        "sent_at_ms": 23921,
+        "outcome": "Success",
+        "settle_ms": 2543
+      }
+    ],
+    "replacements": 0,
+    "gate_opened_at_ms": 3459,
+    "stopped_paying_at_ms": 26976,
+    "last_payment_sent_at_ms": 23921,
+    "last_byte_at_ms": 34745,
+    "download_ended_at_ms": 46763,
+    "data_stopped_after_last_payment_ms": 10824,
+    "ended_after_last_payment_ms": 22842,
+    "meterd": {
+      "status": "cut",
+      "bytes_used": 8388608,
+      "allowance_bytes": 8388608,
+      "cut": {
+        "reason": "grace_expired",
+        "t_exhausted_ms": 1794298885392,
+        "t_gate_closed_ms": 1794298897393,
+        "cutoff_ms": 12001,
+        "within_deadline": true
+      }
+    },
+    "paid_bytes": 8388608,
+    "unpaid_bytes_received": 0,
+    "gateway_after_cut_status": 402,
+    "phase": "D: final (256 KiB/s, prefetch 3 s, one payment in flight)",
+    "note": "The script then also had a stuck-payment replace step; it never triggered (replacements 0) and was removed afterwards, see FIBER_NOTES F-005."
+  },
+  {
+    "session_id": "d19c2b1b-7a95-4c30-9433-4facd7790555",
+    "file": "files/test-50MB.bin",
+    "outcome": "cut (UND_ERR_SOCKET)",
+    "received_bytes": 8388608,
+    "payments": [
+      {
+        "payment_hash": "0xa141a74592b86fc7ffa1a4e3b7d18f50fce8c1b835476156b8aac3887ccda596",
+        "sent_at_ms": 2147,
+        "outcome": "Success",
+        "settle_ms": 1139
+      },
+      {
+        "payment_hash": "0xaa323533467d453513da4b3c5261352c5f46d3b25131e71ba4f09a355521aace",
+        "sent_at_ms": 8165,
+        "outcome": "Success",
+        "settle_ms": 1115
+      },
+      {
+        "payment_hash": "0x4886435c6e9203c72485a06dfcb6b9880efa9a3cd8acc1d8fb3bbcdde607e24f",
+        "sent_at_ms": 15890,
+        "outcome": "Success",
+        "settle_ms": 1137
+      },
+      {
+        "payment_hash": "0x86231ba47adf9ffc8b2314f1e617432fa58c0f09a02892e28fd43429ac22dae2",
+        "sent_at_ms": 24516,
+        "outcome": "Success",
+        "settle_ms": 1153
+      }
+    ],
+    "replacements": 0,
+    "gate_opened_at_ms": 3544,
+    "stopped_paying_at_ms": 26874,
+    "last_payment_sent_at_ms": 24516,
+    "last_byte_at_ms": 34890,
+    "download_ended_at_ms": 46952,
+    "data_stopped_after_last_payment_ms": 10374,
+    "ended_after_last_payment_ms": 22436,
+    "meterd": {
+      "status": "cut",
+      "bytes_used": 8388608,
+      "allowance_bytes": 8388608,
+      "cut": {
+        "reason": "grace_expired",
+        "t_exhausted_ms": 1794298935155,
+        "t_gate_closed_ms": 1794298947155,
+        "cutoff_ms": 12000,
+        "within_deadline": true
+      }
+    },
+    "paid_bytes": 8388608,
+    "unpaid_bytes_received": 0,
+    "gateway_after_cut_status": 402,
+    "phase": "D: final (256 KiB/s, prefetch 3 s, one payment in flight)",
+    "note": "The script then also had a stuck-payment replace step; it never triggered (replacements 0) and was removed afterwards, see FIBER_NOTES F-005."
+  }
+]

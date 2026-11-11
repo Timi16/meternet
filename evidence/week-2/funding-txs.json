@@ -1,0 +1,7 @@
+[
+  {
+    "channel": "browser node (fiber-js 0.9.1, headless Chrome) -> server FNN over wss",
+    "tx_hash": "0x5df1bc868210e16da8cedf388e3923242233b3de187bb8d852742e6cab87305a",
+    "payer_funding_ckb": 200
+  }
+]
