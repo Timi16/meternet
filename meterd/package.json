@@ -10,7 +10,8 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "e2e": "tsx scripts/testnet-e2e.ts",
-    "trial": "tsx scripts/payment-trial.ts"
+    "trial": "tsx scripts/payment-trial.ts",
+    "start:hotspot": "tsx src/main-hotspot.ts"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",
