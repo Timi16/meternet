@@ -1,0 +1,14 @@
+# Keep the Docker build context to what the box image needs.
+**/node_modules
+.git
+content
+logs
+evidence
+web/public/dist
+box/certs
+box/certs-staging
+box/.env
+box/box.env
+box/data
+**/.env
+*.log

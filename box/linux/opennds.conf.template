@@ -1,0 +1,35 @@
+# openNDS v11 config for the MeterNet box. entrypoint.sh writes it to
+# /etc/config/opennds with the __PLACEHOLDERS__ filled from the environment.
+# Option names and meanings: linux_openwrt/opennds/files/etc/config/opennds in
+# the openNDS v11.0.0 source (v11 requires the named section below).
+config opennds 'setup'
+	option enabled '1'
+	option debuglevel '__DEBUGLEVEL__'
+	option gatewayinterface '__GATEWAY_IFACE__'
+	option gatewayname 'MeterNet-demo'
+
+	# openNDS admits only clients that got their address by DHCP, checked
+	# against this file. entrypoint.sh's dnsmasq writes it.
+	option dhcp_leases_file '__DHCP_LEASES__'
+
+	# The portal. Unpaid phones are redirected to the box on 8080 (a local FAS
+	# can't use port 80), where Caddy sends them on to the HTTPS portal.
+	# meterd decides who gets in, with ndsctl auth/deauth.
+	option fasport '8080'
+	option fas_secure_enabled '1'
+
+	# openNDS must not log out a paying phone behind the meter's back (meterd
+	# lets a paid phone back in if it does). Minutes. Not 0: on the ndsctl
+	# auth path openNDS sets session_end = now + sessiontimeout (auth.c,
+	# auth_change_state), so 0 logs the phone out at the next check. 30 days.
+	option sessiontimeout '43200'
+	option authidletimeout '1440'
+	option preauthidletimeout '30'
+	option checkinterval '15'
+
+	# Box services an unpaid phone may reach, besides openNDS's always-allowed
+	# DNS 53, DHCP 67, SSH 22 and HTTPS 443 (the portal): the portal redirect
+	# and the Fiber node's wss port for the browser wallet.
+	list users_to_router 'allow tcp port 8080'
+	list users_to_router 'allow tcp port 8443'
+__EXTRA_ROUTER_RULES__
