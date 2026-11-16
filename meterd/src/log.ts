@@ -10,10 +10,14 @@ export type LogEvent =
   | "invoice_expired"
   | "invoice_cancelled"
   | "gate_opened"
+  // ndsctl auth (or the gateway) refused; retried while the device has credit.
+  | "gate_open_failed"
   | "grace_started"
   | "gate_close_failed"
   | "cut"
-  | "session_ended";
+  | "session_ended"
+  // A box restart gave back credit the device had paid for and not used.
+  | "session_resumed";
 
 // Why a session that was not cut ended (session_ended lines). Unpaid
 // sessions are always "cut" lines; these are sessions closed for other reasons.

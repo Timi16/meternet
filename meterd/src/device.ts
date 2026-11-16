@@ -51,7 +51,11 @@ export class DeviceMeter {
   readonly sessionId = randomUUID();
   private session: MeterSession;
   private readonly issued = new Map<Hex, IssuedInvoice>();
+  // gateOpen: the gate may be open, so a cut must close it (set before the
+  // open is attempted: fail closed). gateConfirmed: the last open succeeded
+  // and nothing has closed it since; what the portal and dashboard show.
   private gateOpen = false;
+  private gateConfirmed = false;
   // Serialises requestChunk() and poll(): two overlapping calls would otherwise
   // issue duplicate invoices or credit the same payment twice.
   private busy: Promise<unknown> = Promise.resolve();
@@ -77,6 +81,10 @@ export class DeviceMeter {
     return this.session.state;
   }
 
+  get gateIsOpen(): boolean {
+    return this.gateConfirmed;
+  }
+
   get snapshot(): MeterSession {
     return this.session;
   }
@@ -91,9 +99,35 @@ export class DeviceMeter {
     if (this.session.state === "cut") return;
     if (this.gateOpen) {
       this.gateOpen = false;
+      this.gateConfirmed = false;
       await this.closeGateUntilClosed();
     }
     this.write({ event: "session_ended", cutoff_reason: reason, t_gate_closed_ms: this.deps.now() });
+  }
+
+  // After a box restart: give back credit the device paid for and hadn't
+  // used (from the box's credit store), and let it straight back online.
+  // Returns false if there was nothing to restore.
+  resume(allowanceBytes: number, usedBytes: number): Promise<boolean> {
+    return this.serial(async () => {
+      if (this.ended) return false;
+      this.apply({ type: "CREDIT_RESTORED", allowanceBytes, usedBytes });
+      if (this.session.state !== "paid") return false;
+      this.write({ event: "session_resumed" });
+      // If the open fails, the credit stays restored and the hotspot retries.
+      await this.openGate();
+      return true;
+    });
+  }
+
+  // Opens the gate again for a device that has credit but isn't getting
+  // through: the firewall dropped it (openNDS restart or timeout) or the
+  // first open failed. Returns whether the gate is now open. Never throws.
+  reopen(): Promise<boolean> {
+    return this.serial(async () => {
+      if (this.ended || (this.session.state !== "paid" && this.session.state !== "grace")) return false;
+      return this.openGate();
+    });
   }
 
   // Returns the invoice the device should pay next, issuing one if the meter
@@ -158,6 +192,7 @@ export class DeviceMeter {
     if (before !== "cut" && this.session.state === "cut") {
       if (this.gateOpen) {
         this.gateOpen = false;
+        this.gateConfirmed = false;
         await this.closeGateUntilClosed();
       }
       // Written after the close succeeds, so t_gate_closed_ms is when access
@@ -197,11 +232,28 @@ export class DeviceMeter {
       t_paid_seen_ms: paidAt,
     });
     this.issued.delete(hash);
-    if (!this.gateOpen && !this.ended && this.session.state === "paid") {
-      this.gateOpen = true;
+    if (!this.gateConfirmed && !this.ended && this.session.state === "paid") await this.openGate();
+  }
+
+  // A failed open is logged (gate_open_failed) and left for reopen() to
+  // retry; it never stops the payment from being credited. A cut or end that
+  // lands while the open is in flight wins: the gate is closed again.
+  private async openGate(): Promise<boolean> {
+    this.gateOpen = true;
+    try {
       await this.deps.gate.open(this.gateKey);
-      this.write({ event: "gate_opened" });
+    } catch (err) {
+      this.write({ event: "gate_open_failed", error: err instanceof Error ? err.message : String(err) });
+      return false;
     }
+    if (this.ended || this.session.state === "cut") {
+      this.gateOpen = false;
+      await this.closeGateUntilClosed();
+      return false;
+    }
+    this.gateConfirmed = true;
+    this.write({ event: "gate_opened" });
+    return true;
   }
 
   private async closeGateUntilClosed(): Promise<void> {
