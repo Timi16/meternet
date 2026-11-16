@@ -27,6 +27,8 @@ export class MockFnn {
   url = "";
   // While true, requests get no reply until releaseHung(): a stuck FNN RPC.
   hang = false;
+  // While true, every request's connection is dropped: an unreachable FNN.
+  down = false;
   private hung: (() => void)[] = [];
 
   releaseHung(): void {
@@ -38,6 +40,7 @@ export class MockFnn {
       let body = "";
       req.on("data", (c) => (body += c));
       req.on("end", () => {
+        if (this.down) return void res.destroy();
         const msg = JSON.parse(body) as RecordedRequest;
         this.requests.push(msg);
         const send = () => {
