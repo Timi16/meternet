@@ -31,7 +31,10 @@ export type MeterEvent =
   | { type: "INVOICE_CLOSED"; paymentHash: string }
   // Cumulative bytes used by the device this session, read at nowMs.
   | { type: "USAGE_UPDATE"; bytes: number; nowMs: number }
-  | { type: "TICK"; nowMs: number };
+  | { type: "TICK"; nowMs: number }
+  // After a box restart: credit the device had paid for and not yet used,
+  // from the box's credit store. Only applies to a fresh (idle) session.
+  | { type: "CREDIT_RESTORED"; allowanceBytes: number; usedBytes: number };
 
 export interface MeterSession {
   readonly state: MeterState;
@@ -104,6 +107,12 @@ export function step(s: MeterSession, e: MeterEvent): MeterSession {
         return { ...s, usedBytes, nowMs, state: "grace", graceStartedAtMs: nowMs };
       }
       return { ...s, usedBytes, nowMs };
+    }
+
+    case "CREDIT_RESTORED": {
+      if (s.state !== "idle" || s.pendingInvoices.length > 0) return s;
+      if (e.usedBytes >= e.allowanceBytes) return s;
+      return { ...s, state: "paid", allowanceBytes: e.allowanceBytes, usedBytes: e.usedBytes };
     }
 
     case "TICK": {

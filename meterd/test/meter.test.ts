@@ -148,4 +148,18 @@ describe("meter", () => {
     );
     expect(s.usedBytes).toBe(1_000);
   });
+
+  it("restores paid-but-unused credit after a restart, straight into paid", () => {
+    const s = step(initialSession(5_000), { type: "CREDIT_RESTORED", allowanceBytes: 4 * CHUNK_BYTES, usedBytes: CHUNK_BYTES });
+    expect(s).toMatchObject({ state: "paid", allowanceBytes: 4 * CHUNK_BYTES, usedBytes: CHUNK_BYTES });
+    // and meters on from there
+    const g = step(s, { type: "USAGE_UPDATE", bytes: 4 * CHUNK_BYTES, nowMs: 6_000 });
+    expect(g).toMatchObject({ state: "grace", graceStartedAtMs: 6_000 });
+  });
+
+  it("restores nothing when no credit is left, or once a session has started", () => {
+    expect(step(initialSession(0), { type: "CREDIT_RESTORED", allowanceBytes: CHUNK_BYTES, usedBytes: CHUNK_BYTES }).state).toBe("idle");
+    const paid = paidSession();
+    expect(step(paid, { type: "CREDIT_RESTORED", allowanceBytes: 10 * CHUNK_BYTES, usedBytes: 0 })).toBe(paid);
+  });
 });
