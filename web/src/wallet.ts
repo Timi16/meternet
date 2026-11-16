@@ -11,9 +11,18 @@ declare const __BOX_ADDR__: string;
 declare const __BOX_PUBKEY__: string;
 declare const __CKB_RPC__: string;
 
-export const BOX_ADDR = __BOX_ADDR__;
-export const BOX_PUBKEY = __BOX_PUBKEY__;
-export const CKB_RPC = __CKB_RPC__;
+// The MeterNet node this page pays and the CKB RPC it reads: the public
+// server's, built in, or a hotspot box's, which its portal sets at runtime
+// from the box's /api/hotspot/info (useNode) before starting the wallet.
+export interface NodeConfig {
+  addr: string;
+  pubkey: string;
+  ckbRpc: string;
+}
+let node: NodeConfig = { addr: __BOX_ADDR__, pubkey: __BOX_PUBKEY__, ckbRpc: __CKB_RPC__ };
+export function useNode(c: NodeConfig): void {
+  node = c;
+}
 export const FUNDING_CKB = 200;
 // 200 CKB into the channel, plus the transaction fee and a change cell.
 export const MIN_BALANCE_CKB = 300;
@@ -87,9 +96,9 @@ export async function startWallet(): Promise<Wallet> {
     import("yaml"),
   ]);
   const fiber = new Fiber();
-  const config = parseDocument(fiber.getDefaultConfig("testnet", CKB_RPC), { schema: "failsafe" });
+  const config = parseDocument(fiber.getDefaultConfig("testnet", node.ckbRpc), { schema: "failsafe" });
   config.setIn(["fiber", "listening_addr"], "/ip4/127.0.0.1/tcp/8228");
-  config.setIn(["fiber", "bootnode_addrs"], [BOX_ADDR]);
+  config.setIn(["fiber", "bootnode_addrs"], [node.addr]);
   // A string on purpose (FIBER_NOTES F-004): written unquoted, read as false.
   config.setIn(["fiber", "announce_listening_addr"], "false");
   await fiber.start(
@@ -106,10 +115,10 @@ export async function startWallet(): Promise<Wallet> {
 }
 
 export async function connectBox(fiber: Fiber, timeoutMs = 30_000): Promise<void> {
-  await fiber.connectPeer({ address: BOX_ADDR });
+  await fiber.connectPeer({ address: node.addr });
   const until = Date.now() + timeoutMs;
   while (Date.now() < until) {
-    if ((await fiber.listPeers()).peers.some((p) => p.pubkey === BOX_PUBKEY)) return;
+    if ((await fiber.listPeers()).peers.some((p) => p.pubkey === node.pubkey)) return;
     await sleep(250);
   }
   throw new Error("Couldn't reach the MeterNet node. Check your connection and reload.");
@@ -117,7 +126,7 @@ export async function connectBox(fiber: Fiber, timeoutMs = 30_000): Promise<void
 
 // Spendable testnet CKB at the wallet's address, from the CKB RPC indexer.
 export async function balanceCkb(lock: Script): Promise<number> {
-  const res = await fetch(CKB_RPC, {
+  const res = await fetch(node.ckbRpc, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
@@ -132,7 +141,7 @@ export async function balanceCkb(lock: Script): Promise<number> {
 }
 
 export async function channels(fiber: Fiber): Promise<Channel[]> {
-  const r = (await fiber.invokeCommand("list_channels", [{ pubkey: BOX_PUBKEY }])) as { channels: Channel[] };
+  const r = (await fiber.invokeCommand("list_channels", [{ pubkey: node.pubkey }])) as { channels: Channel[] };
   return r.channels.filter((c) => c.is_one_way !== false);
 }
 
@@ -147,7 +156,7 @@ export async function openChannel(fiber: Fiber): Promise<void> {
     try {
       await fiber.invokeCommand("open_channel", [
         {
-          pubkey: BOX_PUBKEY,
+          pubkey: node.pubkey,
           funding_amount: "0x" + (BigInt(FUNDING_CKB) * BigInt(SHANNONS_PER_CKB)).toString(16),
           public: false,
           one_way: true,
