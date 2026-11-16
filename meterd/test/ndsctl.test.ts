@@ -2,6 +2,7 @@
 // prints (src/util.c: ndsctl_json_all / ndsctl_json_one / ndsctl_json_client).
 
 import { describe, expect, it } from "vitest";
+import { OpenNdsFirewall, parseProcArp } from "../src/firewall";
 import { NdsctlCli, NdsGate, parseNdsJson, type RunResult } from "../src/ndsctl";
 
 const MAC = "aa:bb:cc:dd:ee:01";
@@ -93,13 +94,16 @@ describe("NdsctlCli", () => {
     await expect(new NdsctlCli(f.run).auth(MAC)).rejects.toThrow(/Failed to authenticate/);
   });
 
-  it("refuses anything that isn't a MAC address", async () => {
+  it("authenticates by MAC or IPv4, deauthenticates by MAC only, and refuses anything else", async () => {
     const f = new FakeRun();
     const nds = new NdsctlCli(f.run);
-    for (const bad of ["", "aa:bb", "aa:bb:cc:dd:ee:ff; reboot", "10.0.0.1"]) {
+    for (const bad of ["", "aa:bb", "aa:bb:cc:dd:ee:ff; reboot", "10.0.0.256", "10.0.0.1; reboot", "-h"]) {
       await expect(nds.auth(bad)).rejects.toThrow(/MAC/);
     }
+    await expect(nds.deauth("10.0.0.1")).rejects.toThrow(/MAC/);
     expect(f.calls).toEqual([]);
+    await nds.auth("10.42.0.193");
+    expect(f.calls).toEqual([["auth", "10.42.0.193"]]);
   });
 
   it("lists clients", async () => {
@@ -135,3 +139,90 @@ describe("NdsGate", () => {
     await expect(new NdsGate(new NdsctlCli(f.run)).close(MAC)).rejects.toThrow();
   });
 });
+
+describe("ndsctl concurrency (openNDS runs one command at a time)", () => {
+  it("retries when ndsctl says it is busy (exit 4)", async () => {
+    let n = 0;
+    const run = async (args: string[]): Promise<RunResult> => {
+      n++;
+      return n < 3
+        ? { code: 4, stdout: "ndsctl thread is busy, please try later.", stderr: "" }
+        : { code: 0, stdout: args[0] === "json" ? ALL : "", stderr: "" };
+    };
+    const nds = new NdsctlCli(run, { busyRetryMs: 1 });
+    expect((await nds.clients()).map((c) => c.mac)).toEqual([MAC, MAC2]);
+    expect(n).toBe(3);
+  });
+
+  it("never runs two ndsctl commands at once", async () => {
+    let running = 0;
+    let maxRunning = 0;
+    const run = async (args: string[]): Promise<RunResult> => {
+      running++;
+      maxRunning = Math.max(maxRunning, running);
+      await new Promise((r) => setTimeout(r, 5));
+      running--;
+      return { code: 0, stdout: args[0] === "json" ? ALL : "", stderr: "" };
+    };
+    const nds = new NdsctlCli(run);
+    await Promise.all([nds.clients(), nds.auth(MAC), nds.deauth(MAC2), nds.clients()]);
+    expect(maxRunning).toBe(1);
+  });
+
+  it("gives up on busy after a few tries, so a cut retries at the meter level", async () => {
+    const run = async (): Promise<RunResult> => ({ code: 4, stdout: "ndsctl thread is busy, please try later.", stderr: "" });
+    await expect(new NdsctlCli(run, { busyRetryMs: 1, busyTries: 3 }).deauth(MAC)).rejects.toThrow(/busy/);
+  });
+});
+
+describe("OpenNdsFirewall.identify", () => {
+  const PROC_ARP = `IP address       HW type     Flags       HW address            Mask     Device
+10.42.0.10       0x1         0x2         2a:0b:5c:aa:bb:cc     *        mn-gw
+10.42.0.11       0x1         0x0         00:00:00:00:00:00     *        mn-gw
+162.35.126.1     0x1         0x2         00:16:3e:00:00:01     *        eth0
+`;
+
+  it("reads complete neighbour entries on the hotspot interface only", () => {
+    expect(parseProcArp(PROC_ARP, "mn-gw")).toEqual(new Map([["10.42.0.10", "2a:0b:5c:aa:bb:cc"]]));
+  });
+
+  it("finds a device openNDS hasn't registered yet through the neighbour table", async () => {
+    const empty = async (): Promise<RunResult> => ({ code: 0, stdout: '{\n  "client_list_length":"0",\n  "clients":{\n  }\n}\n', stderr: "" });
+    const fw = new OpenNdsFirewall(new NdsctlCli(empty), 500, Date.now, () => parseProcArp(PROC_ARP, "mn-gw"));
+    expect(await fw.identify("10.42.0.10")).toEqual({ key: "2a:0b:5c:aa:bb:cc", mac: "2a:0b:5c:aa:bb:cc" });
+    expect(await fw.identify("10.42.0.99")).toBeNull();
+  });
+
+  it("counts an auth openNDS refuses because the client is already authenticated as open", async () => {
+    const refusing = (json: string) => async (args: string[]): Promise<RunResult> =>
+      args[0] === "json" ? { code: 0, stdout: json, stderr: "" } : { code: 1, stdout: "No", stderr: "" };
+    const fw = (json: string) => new OpenNdsFirewall(new NdsctlCli(refusing(json)), 500, Date.now, () => new Map());
+    await expect(fw(ALL).open(MAC)).resolves.toBeUndefined(); // MAC is Authenticated in ALL
+    await expect(fw(ALL).open(MAC2)).rejects.toThrow(/exited 1/); // MAC2 is Preauthenticated
+  });
+
+  it("lists devices on the hotspot that openNDS doesn't know yet (after a restart)", async () => {
+    const run = async (): Promise<RunResult> => ({ code: 0, stdout: ALL, stderr: "" });
+    const fw = new OpenNdsFirewall(new NdsctlCli(run), 500, Date.now, () => parseProcArp(PROC_ARP, "mn-gw"));
+    expect((await fw.clients()).map((c) => c.mac).sort()).toEqual(["2a:0b:5c:aa:bb:cc", MAC, MAC2]);
+  });
+
+  // openNDS's preemptive auth by MAC takes the first `ip neigh` match, which
+  // can be an address the phone had before its current DHCP lease.
+  it("authenticates a device by the address it is using now", async () => {
+    const calls: string[][] = [];
+    const run = async (args: string[]): Promise<RunResult> => {
+      calls.push(args);
+      return args[0] === "json"
+        ? { code: 0, stdout: '{\n  "client_list_length":"0",\n  "clients":{\n  }\n}\n', stderr: "" }
+        : { code: 0, stdout: "", stderr: "" };
+    };
+    const fw = new OpenNdsFirewall(new NdsctlCli(run), 500, Date.now, () => parseProcArp(PROC_ARP, "mn-gw"));
+    await fw.open("2a:0b:5c:aa:bb:cc");
+    expect(calls.at(-1)).toEqual(["auth", "2a:0b:5c:aa:bb:cc"]); // address not known yet
+    await fw.identify("10.42.0.10");
+    await fw.open("2a:0b:5c:aa:bb:cc");
+    expect(calls.at(-1)).toEqual(["auth", "10.42.0.10"]);
+  });
+});
+
