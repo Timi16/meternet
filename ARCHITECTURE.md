@@ -12,7 +12,7 @@ Status: week 2. Implemented and tested: the `meterd` state machine and meter loo
 | **meterd** | Box | TypeScript daemon. It owns one meter session per device: it creates an invoice per 2 MB chunk, polls for `Paid`, tracks allowance against usage, and calls `ndsctl` to grant or cut access. The core is a pure state machine (`meterd/src/meter.ts`) with I/O kept in thin adapters (`fnn.ts`, `ndsctl.ts`). |
 | **Browser client** | User's phone or browser | The portal page (hotspot) or demo page (web MVP). It runs the official Fiber WASM / fiber-js node, calls `connect_peer` to the box's FNN, `open_channel` with `public: false, one_way: true`, and then `send_payment` for each chunk invoice, one at a time. The node and the pages are in `web/`. |
 | **Public server** | VPS | The web MVP: the same FNN and meterd, with Caddy for TLS (`wss://fiber.<host>` to FNN's P2P port, `https://<host>` for the page, `/api` and `/gw` to meterd on localhost). See "Public web MVP". |
-| **Walled garden** | openNDS config | The set of destinations an unauthenticated client may reach. It must include the portal/FAS, the `meterd` HTTP endpoint, and the box FNN's peer endpoint. It probably also needs a CKB testnet RPC endpoint so the browser node can fund and watch the channel. fiber-js dials FNN over wss only: a TLS proxy in front of FNN's P2P port, which accepts WebSocket on the same port (verified on the public server, see FIBER_NOTES.md "Public wss endpoint"). The page also needs `https://testnet.ckbapp.dev/` (CORS allows any origin). `TODO(verify)`: the exact walled-garden entries on the box. The box needs its own hostname and certificate (see "openNDS facts"). |
+| **Walled garden** | openNDS config + the box's Caddy | Before paying, a phone reaches only the box: DNS and DHCP (53, 67), the HTTPS portal (443), openNDS's redirect target (8080) and the box FNN's wss (8443), all on the box's own address (`box/linux/opennds.conf.template`). The CKB testnet RPC the wallet needs is proxied by the box at `/ckb-rpc` (`box/linux/Caddyfile`), so no outside address has to be opened. fiber-js dials FNN over wss only, so Caddy terminates TLS on 8443 in front of FNN's P2P port, as on the public server. The box has its own hostname and certificate (DuckDNS + Let's Encrypt DNS-01, `box/certs.sh`). An unpaid phone can't reach the faucet, so its wallet must be funded beforehand. |
 
 ### openNDS facts (checked 2026-11-11, openNDS v11.0.0)
 
@@ -26,7 +26,17 @@ From the docs (opennds.readthedocs.io, stable) and, where the docs are silent, t
   - ndsctl state does not survive an openNDS restart.
 - **Usage.**
   - `ndsctl json <mac>` prints `download_this_session` and `upload_this_session` in **KiB** (bytes / 1024), as strings (`src/util.c`, `ndsctl_json_client`).
-  - It calls `iptables_fw_counters_update()` before printing, so every call reads the nftables counters fresh. meterd polls it; per-device iptables counters are not needed.
+  - It calls `iptables_fw_counters_update()` before printing, so every call reads the nftables counters fresh. meterd polls it; per-device iptables counters are not needed, **provided flowtable offload is off** (next point).
+  - **Flowtables (found 2026-11-16 on the test box).** v11 always adds `flow offload` rules for authenticated traffic (`libopennds.sh`, `gatewaycheck`; no config option). Offloaded packets skip the forward path, so openNDS's per-client counters stop counting (a test phone was metered at 7.7 MB after downloading 60 MB) and a deauth doesn't end connections already offloaded. The box image deletes those three rules at build time (`box/linux/Dockerfile`; the build fails if the script doesn't match). openNDS's own quotas would be affected the same way: worth an upstream issue.
+- **Clients (found 2026-11-16).**
+  - openNDS only adds a client whose IP is in a DHCP lease file (`client_list_add_client` → `libopennds.sh dhcp_check`, option `dhcp_leases_file`). A static-IP client is refused: captive probes get 403 and `ndsctl auth` fails. The box runs dnsmasq for DHCP and points openNDS at its lease file.
+  - `ndsctl auth` of a client openNDS hasn't seen yet (preemptive authentication) looks the argument up in `ip neigh` and takes the first match. By MAC, that can be an old address the phone no longer has; meterd authenticates by the phone's current IP (from its portal requests).
+  - `ndsctl auth` answers "No" (exit 1) for a client that is already authenticated; meterd then checks `ndsctl json` and treats it as open.
+  - On the `ndsctl auth` path openNDS sets `session_end = now + sessiontimeout` (`auth.c`, `auth_change_state`), so `sessiontimeout 0` logs the phone out at the next check, contrary to "0 = no limit". The box uses 43200 (30 days), and meterd re-opens a paid phone that openNDS drops.
+  - Logs go only to syslog (`debug.c`); in a container, mount `/dev/log`.
+  - A restart within `checkinterval` of the last heartbeat (`/tmp/ndscids/heartbeat`) refuses to start ("already running"). The container entrypoint clears openNDS's runtime files first.
+  - `ndsctl` handles one command at a time and answers exit 4 ("busy") to an overlapping one; meterd queues its calls and retries.
+  - Every `checkinterval` a watchdog fetches openNDS's own `http://<gw>:2050/mhdstatus` with `wget` or `uclient-fetch` (`libopennds.sh mhd_get_status`). Without either tool the check times out, openNDS restarts its web server, and `ndsctl` stalls for about 4 s. On the test box that pushed one cut to 15.4 s; the box image installs `wget` (check now 0.27 s, no restarts).
 - **Portal and walled garden.**
   - A local FAS can't use port 80.
   - Walled garden by IP: `list preauthenticated_users`. By FQDN (TCP only, needs dnsmasq with nftset): `walledgarden_fqdn_list`. Box services: `list users_to_router`.
@@ -145,14 +155,14 @@ sequenceDiagram
 
 ## Failure scenarios
 
-H2 requires every one of these to end with `t_gate_closed_ms - t_exhausted_ms` ≤ 15 s, across 3 runs each. None has been tested yet.
+H2 requires every one of these to end with `t_gate_closed_ms - t_exhausted_ms` ≤ 15 s, across 3 runs each. All six are in `npm test` against the mocked FNN (`meterd/test/failure-scenarios.test.ts`), and were run 3 times each on the real box with a simulated phone (`box/sim/lab.mjs`; results in `evidence/week3/`).
 
 | # | Scenario | What should happen |
 |---|----------|--------------------|
 | 1 | **Tab closed.** The user closes the portal tab, so the in-browser node stops. | No more payments arrive. Grace expires, then deauth. |
 | 2 | **Screen locked.** The phone locks and the browser throttles or suspends the page. | Same as 1, unless payments keep flowing. Records whether a locked phone can keep paying. |
 | 3 | **Box uplink dropped.** The box loses its internet uplink. | Payments over the channel may still settle, because the channel is direct between phone and box. Record what happens to the meter and the user's traffic. |
-| 4 | **Box rebooted.** The box restarts mid-session. | `meterd` session state is lost. After restart, no device may stay authenticated without a fresh payment. `TODO(verify)`: whether openNDS clears clients on restart. |
+| 4 | **Box rebooted.** The box restarts mid-session. | openNDS starts with no clients, so every phone is blocked. meterd keeps each phone's paid-but-unused credit on disk (`credits.json`), and gives it back the moment the phone shows up again (on the Wi-Fi, or asking the portal), without a new payment. Once that credit is used, it pays as before. |
 | 5 | **User stops paying.** The page stays open but payments stop. | Grace expires, then deauth. |
 | 6 | **User channel empty.** The user's side of the channel runs out of funds. | `send_payment` fails on the phone. Grace expires, then deauth. The page should tell the user why. |
 
