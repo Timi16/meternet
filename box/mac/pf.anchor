@@ -1,0 +1,27 @@
+# MeterNet hotspot rules for macOS. hotspot.sh loads them into the pf anchor
+# com.apple/meternet, which macOS's own /etc/pf.conf already evaluates
+# (rdr-anchor and anchor "com.apple/*"); no system file is edited.
+#
+# Internet Sharing provides the Wi-Fi access point on bridge100, DHCP, DNS
+# and NAT. These rules decide which phones may go further:
+# - everyone may reach the box itself: DHCP, DNS, the portal on 443 (which
+#   also proxies the CKB testnet RPC) and the Fiber node's wss on 8443.
+#   <walled> is empty unless WALLED_HOSTS adds hosts; it is not used for the
+#   CKB RPC because that host shares Cloudflare addresses with other sites;
+# - phones in <paid> may reach anything, and pf counts their bytes per
+#   address (meterd reads them with `pfctl -vT show`);
+# - everyone else is blocked. Plain-HTTP requests from unpaid phones, such
+#   as the OS captive-portal checks, are redirected to the box's portal.
+#
+# hotspot.sh passes the interface and the box address as macros.
+
+table <paid> persist
+table <walled> persist
+
+rdr pass on $iface proto tcp from ! <paid> to ! $box port 80 -> $box port 8080
+
+pass in quick on $iface proto udp from any port 68 to any port 67
+pass in quick on $iface proto { tcp udp } from any to $box keep state
+pass in quick on $iface proto tcp from any to <walled> port 443 keep state
+pass in quick on $iface from <paid> to any keep state
+block drop in quick on $iface all
