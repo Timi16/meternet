@@ -5,6 +5,8 @@
 //             chunks after the page is shown, so it appears at once
 //   board.js  the Board (dashboard.html); no wallet, small
 //   spike.js  the connection test (spike.html)
+//   portal.js the hotspot box's portal (portal.html); its Fiber node comes
+//             from the box at runtime, not from these build-time values
 import * as esbuild from "esbuild";
 
 const env = {
@@ -16,7 +18,7 @@ const env = {
 };
 
 await esbuild.build({
-  entryPoints: ["src/demo.ts", "src/board.ts", "src/spike.ts"],
+  entryPoints: ["src/demo.ts", "src/board.ts", "src/spike.ts", "src/portal.ts"],
   outdir: "public/dist",
   bundle: true,
   splitting: true,

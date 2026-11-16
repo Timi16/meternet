@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="data:," />
+    <title>MeterNet Hotspot</title>
+    <meta name="description" content="This Wi-Fi is sold per 2 MB, paid with Fiber on CKB testnet. Pay as you go; stop and it cuts you off within 15 seconds." />
+    <link rel="stylesheet" href="meter.css" />
+  </head>
+  <body>
+    <header class="stripe">
+      <div class="stripe-inner">
+        <span class="brand">MeterNet-demo<small>Pay-per-MB Wi-Fi · Fiber · CKB<span class="zh">按流量付费</span></small></span>
+        <nav><span class="badge">Testnet <span class="zh">测试网</span><span class="long"> · no real money</span></span></nav>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <h1>Wi-Fi <em>by the megabyte.</em></h1>
+        <p>
+          This hotspot sells data 2&nbsp;MB at a time (<span id="price">…</span>), paid from a Fiber wallet that runs in
+          this browser. Keep this page open and it pays as you go. Stop paying and the hotspot cuts you off within
+          15&nbsp;seconds of your paid data running out.
+        </p>
+      </section>
+
+      <section class="card" aria-labelledby="steps-title">
+        <p class="kicker">Getting online</p>
+        <h2 id="steps-title">Four steps<span class="zh">四步上网</span></h2>
+        <ol class="steps">
+          <li class="step" id="s-wallet"><span class="num">1</span><div><h3>Wallet</h3><p class="detail">Waiting…</p></div></li>
+          <li class="step" id="s-funds">
+            <span class="num">2</span>
+            <div>
+              <h3>Testnet CKB</h3>
+              <p class="detail"></p>
+              <div class="actions" id="fund" hidden><code class="address" id="addr"></code></div>
+            </div>
+          </li>
+          <li class="step" id="s-channel"><span class="num">3</span><div><h3>Channel</h3><p class="detail"></p></div></li>
+          <li class="step" id="s-online">
+            <span class="num">4</span>
+            <div>
+              <h3>Online <span id="lamp" class="sr-only"></span></h3>
+              <p class="detail"></p>
+              <p class="detail"><span id="used"></span> · <span id="pays"></span></p>
+              <p class="detail" id="note"></p>
+              <div class="actions" id="controls" hidden><button class="btn" id="toggle" type="button">Stop paying</button></div>
+            </div>
+          </li>
+        </ol>
+      </section>
+    </main>
+    <script type="module" src="dist/portal.js"></script>
+  </body>
+</html>
