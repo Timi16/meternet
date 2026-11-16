@@ -1,0 +1,750 @@
+[
+  {
+    "scenario": 6,
+    "name": "user channel empty",
+    "run": 1,
+    "started": "2026-11-16T10:20:13.682Z",
+    "pass": true,
+    "checks": {
+      "blocked_before_paying": true,
+      "online_after_paying": true,
+      "cut": true,
+      "box_cut_within_15s": true,
+      "phone_data_stopped_within_15s": true,
+      "blocked_at_end": true,
+      "every_paid_chunk_has_a_preimage": true,
+      "a_payment_failed": true,
+      "cut_after_the_channel_ran_dry": true
+    },
+    "payments_ok": 2,
+    "payments_failed": 2,
+    "payment_hashes": [
+      "0xfef4c3f965ac8cc6336ea62ab35237dd48bc416c4ab5c8e367566e502605cff9",
+      "0x7c00b5d65e2069be0934315110f1599d48a7b30b1f217531ae4eec9759e1cf6b"
+    ],
+    "payment_failures": [
+      "send_payment: Send payment error: Failed to build route, Insufficient balance: max outbound liquidity 467756 is insufficient, required amount: 1228810",
+      "send_payment: Send payment error: Failed to build route, Insufficient balance: max outbound liquidity 467756 is insufficient, required amount: 1228810"
+    ],
+    "settle_ms": [
+      230,
+      217
+    ],
+    "cutoffs_ms": [
+      13066
+    ],
+    "cutoff_reasons": [
+      "grace_expired"
+    ],
+    "phone_last_byte_after_exhausted_ms": 12761,
+    "phone_app_last_read_after_exhausted_ms": 15787,
+    "bytes_used_at_cut": 7172096,
+    "allowance_at_cut": 4194304,
+    "host": {
+      "channel_balance_shannons": "3072026",
+      "chunk_price_shannons": "1228810"
+    },
+    "phone": {
+      "mode": "dry",
+      "started_epoch_ms": 1794824429310,
+      "payments": [
+        {
+          "payment_hash": "0xfef4c3f965ac8cc6336ea62ab35237dd48bc416c4ab5c8e367566e502605cff9",
+          "sent_epoch_ms": 1794824429588,
+          "settled_ms": 230,
+          "status": "Success"
+        },
+        {
+          "payment_hash": "0x7c00b5d65e2069be0934315110f1599d48a7b30b1f217531ae4eec9759e1cf6b",
+          "sent_epoch_ms": 1794824431684,
+          "settled_ms": 217,
+          "status": "Success"
+        },
+        {
+          "payment_hash": "0xdd78f9975f085b4a427b0ee105fc2d25d1dae1333a9e2cfa3e533c55281f7f1e",
+          "sent_epoch_ms": 1794824439240,
+          "status": "Failed",
+          "error": "send_payment: Send payment error: Failed to build route, Insufficient balance: max outbound liquidity 467756 is insufficient, required amount: 1228810"
+        },
+        {
+          "payment_hash": "0x03f781b3f3f79356364a79ac1bfd9cce20e3f9e2a1b3f2f919452f9853d2cec3",
+          "sent_epoch_ms": 1794824455157,
+          "status": "Failed",
+          "error": "send_payment: Send payment error: Failed to build route, Insufficient balance: max outbound liquidity 467756 is insufficient, required amount: 1228810"
+        }
+      ],
+      "events": [
+        {
+          "what": "internet before paying: blocked",
+          "epoch_ms": 1794824429415
+        },
+        {
+          "what": "internet after paying: open",
+          "epoch_ms": 1794824431408
+        },
+        {
+          "what": "payment failed: send_payment: Send payment error: Failed to build route, Insufficient balance: max outbound liquidity 467756 is insufficient, required amount: 1228810",
+          "epoch_ms": 1794824439252
+        },
+        {
+          "what": "payment failed: send_payment: Send payment error: Failed to build route, Insufficient balance: max outbound liquidity 467756 is insufficient, required amount: 1228810",
+          "epoch_ms": 1794824455167
+        },
+        {
+          "what": "internet at the end: blocked (box: awaiting_payment)",
+          "epoch_ms": 1794824465593
+        }
+      ],
+      "blocked_before_paying": true,
+      "device_id": "fecff0e1cdedaa6671c217fa43c62a2daa1e57fc10bdcb71f2e9bade70d4fad0",
+      "online_after_paying": true,
+      "cut_seen": true,
+      "received_bytes": 7388928,
+      "last_byte_epoch_ms": 1794824457434,
+      "last_wire_byte_epoch_ms": 1794824454408,
+      "blocked_at_end": true,
+      "box_state_at_end": "awaiting_payment"
+    },
+    "box_log": [
+      {
+        "invoice": "fibt12288101pcg7uy03dewgfw0pmm6vk9s9htjp9989fr7l6vxze4zrgxmy2hvjwfh5yl50secu2qyssprjk23s5nhggwnvgr6zte4hhl5qg889lllwugrkct8gw2s4rgxgv3llnwk8cnj9kckn5qqgcrxpymksd8su6wyx96vu0cvp4elydhxfpc7c7ehs6c63eyztstscnhhv33lmvythddqn7jspdzftkut77qq7q2yqt27mhzczpqz3lafjhv8n393dkfywtg8vm5d68t0n5fznzekfpmz52gdyukknzrgswlxty2wmypraymw9pzjcr96w0ytkg4ayet3srr23xg5dmummgpqs7v7m",
+        "payment_hash": "0xfef4c3f965ac8cc6336ea62ab35237dd48bc416c4ab5c8e367566e502605cff9",
+        "preimage": null,
+        "hash_algorithm": "sha256",
+        "amount_shannons": "1228810",
+        "t_invoice_created_ms": 1794824429578,
+        "t_paid_seen_ms": null,
+        "t_exhausted_ms": null,
+        "t_gate_closed_ms": null,
+        "cutoff_reason": null,
+        "error": null,
+        "event": "invoice_created",
+        "ts": "2026-11-16T10:20:29.580Z",
+        "device_id": "fecff0e1cdedaa6671c217fa43c62a2daa1e57fc10bdcb71f2e9bade70d4fad0",
+        "session_id": "f9445524-c93c-4ad8-b99a-81aa67607ca8",
+        "bytes_used": 0,
+        "allowance_bytes": 0
+      },
+      {
+        "invoice": "fibt12288101pcg7uy03dewgfw0pmm6vk9s9htjp9989fr7l6vxze4zrgxmy2hvjwfh5yl50secu2qyssprjk23s5nhggwnvgr6zte4hhl5qg889lllwugrkct8gw2s4rgxgv3llnwk8cnj9kckn5qqgcrxpymksd8su6wyx96vu0cvp4elydhxfpc7c7ehs6c63eyztstscnhhv33lmvythddqn7jspdzftkut77qq7q2yqt27mhzczpqz3lafjhv8n393dkfywtg8vm5d68t0n5fznzekfpmz52gdyukknzrgswlxty2wmypraymw9pzjcr96w0ytkg4ayet3srr23xg5dmummgpqs7v7m",
+        "payment_hash": "0xfef4c3f965ac8cc6336ea62ab35237dd48bc416c4ab5c8e367566e502605cff9",
+        "preimage": "0x13b58070ea14074047a77f3ea0563a2f8376df2dac6448abda2016f7ea6aae20",
+        "hash_algorithm": "sha256",
+        "amount_shannons": "1228810",
+        "t_invoice_created_ms": 1794824429578,
+        "t_paid_seen_ms": 1794824429778,
+        "t_exhausted_ms": null,
+        "t_gate_closed_ms": null,
+        "cutoff_reason": null,
+        "error": null,
+        "event": "invoice_paid",
+        "ts": "2026-11-16T10:20:29.778Z",
+        "device_id": "fecff0e1cdedaa6671c217fa43c62a2daa1e57fc10bdcb71f2e9bade70d4fad0",
+        "session_id": "f9445524-c93c-4ad8-b99a-81aa67607ca8",
+        "bytes_used": 0,
+        "allowance_bytes": 2097152
+      },
+      {
+        "invoice": null,
+        "payment_hash": null,
+        "preimage": null,
+        "hash_algorithm": null,
+        "amount_shannons": null,
+        "t_invoice_created_ms": null,
+        "t_paid_seen_ms": null,
+        "t_exhausted_ms": null,
+        "t_gate_closed_ms": null,
+        "cutoff_reason": null,
+        "error": null,
+        "event": "gate_opened",
+        "ts": "2026-11-16T10:20:31.072Z",
+        "device_id": "fecff0e1cdedaa6671c217fa43c62a2daa1e57fc10bdcb71f2e9bade70d4fad0",
+        "session_id": "f9445524-c93c-4ad8-b99a-81aa67607ca8",
+        "bytes_used": 0,
+        "allowance_bytes": 2097152
+      },
+      {
+        "invoice": "fibt12288101pcg7uy03dewgfw0pmm6vkvmq673wxwkdfr765vprvcp44qqqk23fgldl5g4gcp0ca2mlzs2l7d5r6eznmw26xcv4zdu5apg9y6jep9kha0u0k3mec0edc9m2xw9wgcjcaqqsmtpadchj46y6umnug3mnrcrrud85z3tv4em5hm69xh2vlcycvj9xppvstpqtu6jayvtazk00xrktga9gemeypqws7lvyzppv026a4t2cqltwyfqtz0lslnzflnyyp7yy9nfkuxwrys7k5f8k9dsnekdldh9v9dyctlva6xgvmdkrqqnp643d638z2nwl82xmd5a5q6jkzusucukqpq3wsez",
+        "payment_hash": "0x7c00b5d65e2069be0934315110f1599d48a7b30b1f217531ae4eec9759e1cf6b",
+        "preimage": null,
+        "hash_algorithm": "sha256",
+        "amount_shannons": "1228810",
+        "t_invoice_created_ms": 1794824431681,
+        "t_paid_seen_ms": null,
+        "t_exhausted_ms": null,
+        "t_gate_closed_ms": null,
+        "cutoff_reason": null,
+        "error": null,
+        "event": "invoice_created",
+        "ts": "2026-11-16T10:20:31.681Z",
+        "device_id": "fecff0e1cdedaa6671c217fa43c62a2daa1e57fc10bdcb71f2e9bade70d4fad0",
+        "session_id": "f9445524-c93c-4ad8-b99a-81aa67607ca8",
+        "bytes_used": 1620992,
+        "allowance_bytes": 2097152
+      },
+      {
+        "invoice": "fibt12288101pcg7uy03dewgfw0pmm6vkvmq673wxwkdfr765vprvcp44qqqk23fgldl5g4gcp0ca2mlzs2l7d5r6eznmw26xcv4zdu5apg9y6jep9kha0u0k3mec0edc9m2xw9wgcjcaqqsmtpadchj46y6umnug3mnrcrrud85z3tv4em5hm69xh2vlcycvj9xppvstpqtu6jayvtazk00xrktga9gemeypqws7lvyzppv026a4t2cqltwyfqtz0lslnzflnyyp7yy9nfkuxwrys7k5f8k9dsnekdldh9v9dyctlva6xgvmdkrqqnp643d638z2nwl82xmd5a5q6jkzusucukqpq3wsez",
+        "payment_hash": "0x7c00b5d65e2069be0934315110f1599d48a7b30b1f217531ae4eec9759e1cf6b",
+        "preimage": "0x9f5a8c102629e4e0a318cf413d0f3a5153cb2e771303a7cee9ab3870b8988991",
+        "hash_algorithm": "sha256",
+        "amount_shannons": "1228810",
+        "t_invoice_created_ms": 1794824431681,
+        "t_paid_seen_ms": 1794824432039,
+        "t_exhausted_ms": null,
+        "t_gate_closed_ms": null,
+        "cutoff_reason": null,
+        "error": null,
+        "event": "invoice_paid",
+        "ts": "2026-11-16T10:20:32.039Z",
+        "device_id": "fecff0e1cdedaa6671c217fa43c62a2daa1e57fc10bdcb71f2e9bade70d4fad0",
+        "session_id": "f9445524-c93c-4ad8-b99a-81aa67607ca8",
+        "bytes_used": 1620992,
+        "allowance_bytes": 4194304
+      },
+      {
+        "invoice": "fibt12288101pcg7uy03dewgfw0pmm6vkagnq8h05hqv67w820963j7h0atetywmnukarlws6us9m894zctjpuqyyp7qjy2e98hzerhlxelflrzksrk4477keypt6nz76yf2vwml4ue0yqr7lma7uw9z60mcmglcy8unac9jxwv6ew9a5aaw45tavthz5c8hazm30rmq0p8hhpfukncmmk5g47460gv72k5umjpqdenz7suvpkn3f4w3psl69fxj7r5lm4t7hhck6qwqd08yeuefp4sjnydxw76hrtzkwrkx25ydr7v5ysjnde7sa6e7a0uekcdjx6rac2wmefkqwe5w77u9jjhrsq55wx0r",
+        "payment_hash": "0xdd78f9975f085b4a427b0ee105fc2d25d1dae1333a9e2cfa3e533c55281f7f1e",
+        "preimage": null,
+        "hash_algorithm": "sha256",
+        "amount_shannons": "1228810",
+        "t_invoice_created_ms": 1794824439237,
+        "t_paid_seen_ms": null,
+        "t_exhausted_ms": null,
+        "t_gate_closed_ms": null,
+        "cutoff_reason": null,
+        "error": null,
+        "event": "invoice_created",
+        "ts": "2026-11-16T10:20:39.239Z",
+        "device_id": "fecff0e1cdedaa6671c217fa43c62a2daa1e57fc10bdcb71f2e9bade70d4fad0",
+        "session_id": "f9445524-c93c-4ad8-b99a-81aa67607ca8",
+        "bytes_used": 3423232,
+        "allowance_bytes": 4194304
+      },
+      {
+        "invoice": null,
+        "payment_hash": null,
+        "preimage": null,
+        "hash_algorithm": null,
+        "amount_shannons": null,
+        "t_invoice_created_ms": null,
+        "t_paid_seen_ms": null,
+        "t_exhausted_ms": 1794824441647,
+        "t_gate_closed_ms": null,
+        "cutoff_reason": null,
+        "error": null,
+        "event": "grace_started",
+        "ts": "2026-11-16T10:20:41.647Z",
+        "device_id": "fecff0e1cdedaa6671c217fa43c62a2daa1e57fc10bdcb71f2e9bade70d4fad0",
+        "session_id": "f9445524-c93c-4ad8-b99a-81aa67607ca8",
+        "bytes_used": 4210688,
+        "allowance_bytes": 4194304
+      },
+      {
+        "invoice": null,
+        "payment_hash": null,
+        "preimage": null,
+        "hash_algorithm": null,
+        "amount_shannons": null,
+        "t_invoice_created_ms": null,
+        "t_paid_seen_ms": null,
+        "t_exhausted_ms": 1794824441647,
+        "t_gate_closed_ms": 1794824454713,
+        "cutoff_reason": "grace_expired",
+        "error": null,
+        "event": "cut",
+        "ts": "2026-11-16T10:20:54.713Z",
+        "device_id": "fecff0e1cdedaa6671c217fa43c62a2daa1e57fc10bdcb71f2e9bade70d4fad0",
+        "session_id": "f9445524-c93c-4ad8-b99a-81aa67607ca8",
+        "bytes_used": 7172096,
+        "allowance_bytes": 4194304
+      },
+      {
+        "invoice": "fibt12288101pcg7uy03dewgfw0pmm6vhzu3gqm4p332m5h8u7gv3ey9qm0glfg8mrra7e3fj0lhp8625pvlwhkcny9k0hem5qnjj8d26t9a8ylk4rt2t4j2d746p42xfzfa7dec4ajs5u2pv9dwpkx4fexaq74dqs4z68vl2k76fjnu69raxthnf999z5dav0tmg4ueuqefgzdnl9c7k0tvyh38puhwer0avu7ap2hks4w8wnf78yeaqnawsrd5j356rn9ze7lpk2adu2yg3a9q3m2ky6s472dd958gn85jzsy72uw4vv0asmd5cpvflk5gnqqsw8qxp9a9895lkdeuaeplq96spzfcncw",
+        "payment_hash": "0x03f781b3f3f79356364a79ac1bfd9cce20e3f9e2a1b3f2f919452f9853d2cec3",
+        "preimage": null,
+        "hash_algorithm": "sha256",
+        "amount_shannons": "1228810",
+        "t_invoice_created_ms": 1794824455153,
+        "t_paid_seen_ms": null,
+        "t_exhausted_ms": null,
+        "t_gate_closed_ms": null,
+        "cutoff_reason": null,
+        "error": null,
+        "event": "invoice_created",
+        "ts": "2026-11-16T10:20:55.153Z",
+        "device_id": "fecff0e1cdedaa6671c217fa43c62a2daa1e57fc10bdcb71f2e9bade70d4fad0",
+        "session_id": "606d9708-e81a-4104-a4d0-16f29e4e68d8",
+        "bytes_used": 0,
+        "allowance_bytes": 0
+      }
+    ]
+  },
+  {
+    "scenario": 6,
+    "name": "user channel empty",
+    "run": 2,
+    "started": "2026-11-16T10:21:10.129Z",
+    "pass": true,
+    "checks": {
+      "blocked_before_paying": true,
+      "online_after_paying": true,
+      "cut": true,
+      "box_cut_within_15s": true,
+      "phone_data_stopped_within_15s": true,
+      "blocked_at_end": true,
+      "every_paid_chunk_has_a_preimage": true,
+      "a_payment_failed": true,
+      "cut_after_the_channel_ran_dry": true
+    },
+    "payments_ok": 1,
+    "payments_failed": 2,
+    "payment_hashes": [
+      "0xe00354a82aed712c6b33d33a1b709e2b349e39adfd817158562d0086348128f6"
+    ],
+    "payment_failures": [
+      "send_payment: Send payment error: Failed to build route, Insufficient balance: max outbound liquidity 221994 is insufficient, required amount: 245762",
+      "send_payment: Send payment error: Failed to build route, Insufficient balance: max outbound liquidity 221994 is insufficient, required amount: 245762"
+    ],
+    "settle_ms": [
+      228
+    ],
+    "cutoffs_ms": [
+      13195
+    ],
+    "cutoff_reasons": [
+      "grace_expired"
+    ],
+    "phone_last_byte_after_exhausted_ms": 12595,
+    "phone_app_last_read_after_exhausted_ms": 18378,
+    "bytes_used_at_cut": 5325824,
+    "allowance_at_cut": 2097152,
+    "host": {
+      "channel_balance_shannons": "614406",
+      "chunk_price_shannons": "245762"
+    },
+    "phone": {
+      "mode": "dry",
+      "started_epoch_ms": 1794824485751,
+      "payments": [
+        {
+          "payment_hash": "0xe00354a82aed712c6b33d33a1b709e2b349e39adfd817158562d0086348128f6",
+          "sent_epoch_ms": 1794824486035,
+          "settled_ms": 228,
+          "status": "Success"
+        },
+        {
+          "payment_hash": "0x01216801060b6017fdf5bc77c8501a57bd4bf57c5d2076cce92e58929b6f21ff",
+          "sent_epoch_ms": 1794824489810,
+          "status": "Failed",
+          "error": "send_payment: Send payment error: Failed to build route, Insufficient balance: max outbound liquidity 221994 is insufficient, required amount: 245762"
+        },
+        {
+          "payment_hash": "0x88b04e979165c445f6bc6e6cfc6f3b61637ec471a8d36d6881886040d334a0cb",
+          "sent_epoch_ms": 1794824502784,
+          "status": "Failed",
+          "error": "send_payment: Send payment error: Failed to build route, Insufficient balance: max outbound liquidity 221994 is insufficient, required amount: 245762"
+        }
+      ],
+      "events": [
+        {
+          "what": "internet before paying: blocked",
+          "epoch_ms": 1794824485867
+        },
+        {
+          "what": "internet after paying: open",
+          "epoch_ms": 1794824487503
+        },
+        {
+          "what": "payment failed: send_payment: Send payment error: Failed to build route, Insufficient balance: max outbound liquidity 221994 is insufficient, required amount: 245762",
+          "epoch_ms": 1794824489827
+        },
+        {
+          "what": "payment failed: send_payment: Send payment error: Failed to build route, Insufficient balance: max outbound liquidity 221994 is insufficient, required amount: 245762",
+          "epoch_ms": 1794824502789
+        },
+        {
+          "what": "internet at the end: blocked (box: awaiting_payment)",
+          "epoch_ms": 1794824515092
+        }
+      ],
+      "blocked_before_paying": true,
+      "device_id": "fecff0e1cdedaa6671c217fa43c62a2daa1e57fc10bdcb71f2e9bade70d4fad0",
+      "online_after_paying": true,
+      "cut_seen": true,
+      "received_bytes": 5783296,
+      "last_byte_epoch_ms": 1794824507635,
+      "last_wire_byte_epoch_ms": 1794824501852,
+      "blocked_at_end": true,
+      "box_state_at_end": "awaiting_payment"
+    },
+    "box_log": [
+      {
+        "invoice": "fibt2457621pcg7uy03dewgfw0pmm6vk4q7p3fv0u402n3y70pm9s45fv8qykanhqyannzmqpfgu6pyj4zms8nuchtrnzlq3q280psanz9cf9sc9n4dfdwsk07kl2j6mhpqzlagf4u0dwef6p8yt68v7wy8x72kgqn8cqpscet38a34ctzfwwr7v8l58fmd0zpyd3c78se6jpgfe50ax0wzqqdt2t43s422557d23ttnutvwqpf6p9cq5xeejfhngqklh82aqlvzwd9z8k5php9mhjz03npmshkqctrmhm83d9ac62he0g30hweypf2p74mfhxn4cgmntfp44s06pm9mc23lfsgpp6r2ns",
+        "payment_hash": "0xe00354a82aed712c6b33d33a1b709e2b349e39adfd817158562d0086348128f6",
+        "preimage": null,
+        "hash_algorithm": "sha256",
+        "amount_shannons": "245762",
+        "t_invoice_created_ms": 1794824486021,
+        "t_paid_seen_ms": null,
+        "t_exhausted_ms": null,
+        "t_gate_closed_ms": null,
+        "cutoff_reason": null,
+        "error": null,
+        "event": "invoice_created",
+        "ts": "2026-11-16T10:21:26.023Z",
+        "device_id": "fecff0e1cdedaa6671c217fa43c62a2daa1e57fc10bdcb71f2e9bade70d4fad0",
+        "session_id": "356ba7d2-7204-4c04-8be5-3e3ab9e38319",
+        "bytes_used": 0,
+        "allowance_bytes": 0
+      },
+      {
+        "invoice": "fibt2457621pcg7uy03dewgfw0pmm6vk4q7p3fv0u402n3y70pm9s45fv8qykanhqyannzmqpfgu6pyj4zms8nuchtrnzlq3q280psanz9cf9sc9n4dfdwsk07kl2j6mhpqzlagf4u0dwef6p8yt68v7wy8x72kgqn8cqpscet38a34ctzfwwr7v8l58fmd0zpyd3c78se6jpgfe50ax0wzqqdt2t43s422557d23ttnutvwqpf6p9cq5xeejfhngqklh82aqlvzwd9z8k5php9mhjz03npmshkqctrmhm83d9ac62he0g30hweypf2p74mfhxn4cgmntfp44s06pm9mc23lfsgpp6r2ns",
+        "payment_hash": "0xe00354a82aed712c6b33d33a1b709e2b349e39adfd817158562d0086348128f6",
+        "preimage": "0x425fb72a65e47b11d317a97d0ef56948f10140d39d65aa9e7e5f6d6d7bd866eb",
+        "hash_algorithm": "sha256",
+        "amount_shannons": "245762",
+        "t_invoice_created_ms": 1794824486021,
+        "t_paid_seen_ms": 1794824486271,
+        "t_exhausted_ms": null,
+        "t_gate_closed_ms": null,
+        "cutoff_reason": null,
+        "error": null,
+        "event": "invoice_paid",
+        "ts": "2026-11-16T10:21:26.271Z",
+        "device_id": "fecff0e1cdedaa6671c217fa43c62a2daa1e57fc10bdcb71f2e9bade70d4fad0",
+        "session_id": "356ba7d2-7204-4c04-8be5-3e3ab9e38319",
+        "bytes_used": 0,
+        "allowance_bytes": 2097152
+      },
+      {
+        "invoice": null,
+        "payment_hash": null,
+        "preimage": null,
+        "hash_algorithm": null,
+        "amount_shannons": null,
+        "t_invoice_created_ms": null,
+        "t_paid_seen_ms": null,
+        "t_exhausted_ms": null,
+        "t_gate_closed_ms": null,
+        "cutoff_reason": null,
+        "error": null,
+        "event": "gate_opened",
+        "ts": "2026-11-16T10:21:27.234Z",
+        "device_id": "fecff0e1cdedaa6671c217fa43c62a2daa1e57fc10bdcb71f2e9bade70d4fad0",
+        "session_id": "356ba7d2-7204-4c04-8be5-3e3ab9e38319",
+        "bytes_used": 0,
+        "allowance_bytes": 2097152
+      },
+      {
+        "invoice": null,
+        "payment_hash": null,
+        "preimage": null,
+        "hash_algorithm": null,
+        "amount_shannons": null,
+        "t_invoice_created_ms": null,
+        "t_paid_seen_ms": null,
+        "t_exhausted_ms": 1794824489257,
+        "t_gate_closed_ms": null,
+        "cutoff_reason": null,
+        "error": null,
+        "event": "grace_started",
+        "ts": "2026-11-16T10:21:29.257Z",
+        "device_id": "fecff0e1cdedaa6671c217fa43c62a2daa1e57fc10bdcb71f2e9bade70d4fad0",
+        "session_id": "356ba7d2-7204-4c04-8be5-3e3ab9e38319",
+        "bytes_used": 2633728,
+        "allowance_bytes": 2097152
+      },
+      {
+        "invoice": "fibt2457621pcg7uy03dewgfw0pmm6vkw78x3lc6gud2n3y70y9wvjzwhvznfex6s7qkv4d8ysnus0ga4zhhu7d3sy9t398jy5ehca4d49ljcgxsfxumkqxrfxe7chapy4seaaw6frefr8djwzeucw3w92ccn6n7ay2jltv3509sldlwcuvnfu9pkarvz8937taeka7snqamh6vz0l937kn3s7sf7u6dv253ej3wm99kct4a9uf55mqquwk0wa4mr0fh9l03p6yytglwrdzdyu6mpqy5dlu5gqhncd3pxh33klfwurmmq8rhpmtdrd7qw35vsxpshkammmcmxc9llj6xzzjvsgsq7yu92t",
+        "payment_hash": "0x01216801060b6017fdf5bc77c8501a57bd4bf57c5d2076cce92e58929b6f21ff",
+        "preimage": null,
+        "hash_algorithm": "sha256",
+        "amount_shannons": "245762",
+        "t_invoice_created_ms": 1794824489808,
+        "t_paid_seen_ms": null,
+        "t_exhausted_ms": null,
+        "t_gate_closed_ms": null,
+        "cutoff_reason": null,
+        "error": null,
+        "event": "invoice_created",
+        "ts": "2026-11-16T10:21:29.808Z",
+        "device_id": "fecff0e1cdedaa6671c217fa43c62a2daa1e57fc10bdcb71f2e9bade70d4fad0",
+        "session_id": "356ba7d2-7204-4c04-8be5-3e3ab9e38319",
+        "bytes_used": 2633728,
+        "allowance_bytes": 2097152
+      },
+      {
+        "invoice": null,
+        "payment_hash": null,
+        "preimage": null,
+        "hash_algorithm": null,
+        "amount_shannons": null,
+        "t_invoice_created_ms": null,
+        "t_paid_seen_ms": null,
+        "t_exhausted_ms": 1794824489257,
+        "t_gate_closed_ms": 1794824502452,
+        "cutoff_reason": "grace_expired",
+        "error": null,
+        "event": "cut",
+        "ts": "2026-11-16T10:21:42.452Z",
+        "device_id": "fecff0e1cdedaa6671c217fa43c62a2daa1e57fc10bdcb71f2e9bade70d4fad0",
+        "session_id": "356ba7d2-7204-4c04-8be5-3e3ab9e38319",
+        "bytes_used": 5325824,
+        "allowance_bytes": 2097152
+      },
+      {
+        "invoice": "fibt2457621pcg7uy03dewgfw0pmm6vh9rramz5dt88p2rvw0pxr386my0slqvqxffkncvp9mnzj6xdcr9p66p440rx077gr7ezev5706ev2semwxp9ys2vydn3xgadqt6spm0lr7gce7jatrxmz6gnr82crwfuhfmugl4qeukx93kp5cjmdz8gruhetm2mzw28galdlqtztjr4ywyjd5ymw6vd0y38fc4p29yxvvzv7u6ek7y0s0fmfq2mhxrszdz94mhuvgst7p9q5k5qfl3g0k8aas52juchj77g5ugutq0q7dyjrt0jq2965k9ch9lwuaymnph2guqcnwn72vnv2hen6qewgpg7yv99",
+        "payment_hash": "0x88b04e979165c445f6bc6e6cfc6f3b61637ec471a8d36d6881886040d334a0cb",
+        "preimage": null,
+        "hash_algorithm": "sha256",
+        "amount_shannons": "245762",
+        "t_invoice_created_ms": 1794824502783,
+        "t_paid_seen_ms": null,
+        "t_exhausted_ms": null,
+        "t_gate_closed_ms": null,
+        "cutoff_reason": null,
+        "error": null,
+        "event": "invoice_created",
+        "ts": "2026-11-16T10:21:42.783Z",
+        "device_id": "fecff0e1cdedaa6671c217fa43c62a2daa1e57fc10bdcb71f2e9bade70d4fad0",
+        "session_id": "541cf8c5-a846-4903-abcf-aa0eaea45544",
+        "bytes_used": 0,
+        "allowance_bytes": 0
+      }
+    ]
+  },
+  {
+    "scenario": 6,
+    "name": "user channel empty",
+    "run": 3,
+    "started": "2026-11-16T10:21:59.631Z",
+    "pass": true,
+    "checks": {
+      "blocked_before_paying": true,
+      "online_after_paying": true,
+      "cut": true,
+      "box_cut_within_15s": true,
+      "phone_data_stopped_within_15s": true,
+      "blocked_at_end": true,
+      "every_paid_chunk_has_a_preimage": true,
+      "a_payment_failed": true,
+      "cut_after_the_channel_ran_dry": true
+    },
+    "payments_ok": 1,
+    "payments_failed": 2,
+    "payment_hashes": [
+      "0xc515992392264e204bec31bf2d688e5401476d7a2b24e1754f90cc7c4888a183"
+    ],
+    "payment_failures": [
+      "send_payment: Send payment error: Failed to build route, Insufficient balance: max outbound liquidity 146650 is insufficient, required amount: 147457",
+      "send_payment: Send payment error: Failed to build route, Insufficient balance: max outbound liquidity 146650 is insufficient, required amount: 147457"
+    ],
+    "settle_ms": [
+      227
+    ],
+    "cutoffs_ms": [
+      12897
+    ],
+    "cutoff_reasons": [
+      "grace_expired"
+    ],
+    "phone_last_byte_after_exhausted_ms": 12609,
+    "phone_app_last_read_after_exhausted_ms": 16841,
+    "bytes_used_at_cut": 5204992,
+    "allowance_at_cut": 2097152,
+    "host": {
+      "channel_balance_shannons": "368644",
+      "chunk_price_shannons": "147457"
+    },
+    "phone": {
+      "mode": "dry",
+      "started_epoch_ms": 1794824536262,
+      "payments": [
+        {
+          "payment_hash": "0xc515992392264e204bec31bf2d688e5401476d7a2b24e1754f90cc7c4888a183",
+          "sent_epoch_ms": 1794824536506,
+          "settled_ms": 227,
+          "status": "Success"
+        },
+        {
+          "payment_hash": "0xb0d8fbeee8766d7dcade730d115395aca459f6afda656746c9ca1d0606cedb0d",
+          "sent_epoch_ms": 1794824540407,
+          "status": "Failed",
+          "error": "send_payment: Send payment error: Failed to build route, Insufficient balance: max outbound liquidity 146650 is insufficient, required amount: 147457"
+        },
+        {
+          "payment_hash": "0x7854e52706c2072bec1860551b283b289b9e4f2185f5beb3c6d2667694a2940f",
+          "sent_epoch_ms": 1794824553284,
+          "status": "Failed",
+          "error": "send_payment: Send payment error: Failed to build route, Insufficient balance: max outbound liquidity 146650 is insufficient, required amount: 147457"
+        }
+      ],
+      "events": [
+        {
+          "what": "internet before paying: blocked",
+          "epoch_ms": 1794824536366
+        },
+        {
+          "what": "internet after paying: open",
+          "epoch_ms": 1794824538261
+        },
+        {
+          "what": "payment failed: send_payment: Send payment error: Failed to build route, Insufficient balance: max outbound liquidity 146650 is insufficient, required amount: 147457",
+          "epoch_ms": 1794824540428
+        },
+        {
+          "what": "payment failed: send_payment: Send payment error: Failed to build route, Insufficient balance: max outbound liquidity 146650 is insufficient, required amount: 147457",
+          "epoch_ms": 1794824553289
+        },
+        {
+          "what": "internet at the end: blocked (box: awaiting_payment)",
+          "epoch_ms": 1794824563599
+        }
+      ],
+      "blocked_before_paying": true,
+      "device_id": "fecff0e1cdedaa6671c217fa43c62a2daa1e57fc10bdcb71f2e9bade70d4fad0",
+      "online_after_paying": true,
+      "cut_seen": true,
+      "received_bytes": 5340928,
+      "last_byte_epoch_ms": 1794824556576,
+      "last_wire_byte_epoch_ms": 1794824552344,
+      "blocked_at_end": true,
+      "box_state_at_end": "awaiting_payment"
+    },
+    "box_log": [
+      {
+        "invoice": "fibt1474571pcg7uy03dewgfw0pmm6vk6mpt3rjd2889wwzxvrfcw3hyqn00nwdrkyx5tsnu5lys4uxx5fy6vtuan5cwkycqk20e7a4jknytfzc9sh5mnt6lzjmzhl8fwel4qnqk5zzj9jnuywqutdut5qxt4ckgf5v2w8z36xjjv4shdhq0h5gyjqtr8e9w03m7pjfpefwmg4szwn4xmnqz365utz3x8ua0uh3y9yzvmhx4m0tz8rqqde52hrjt5wjnh0x3lvzcgeu9zw200rkdurv62rened2nhrjvgm7h5xf0d7a3wm5pqlzn48dqh73ne2dxqfj2jtahc99s5m2dug88q3qp2llesz",
+        "payment_hash": "0xc515992392264e204bec31bf2d688e5401476d7a2b24e1754f90cc7c4888a183",
+        "preimage": null,
+        "hash_algorithm": "sha256",
+        "amount_shannons": "147457",
+        "t_invoice_created_ms": 1794824536497,
+        "t_paid_seen_ms": null,
+        "t_exhausted_ms": null,
+        "t_gate_closed_ms": null,
+        "cutoff_reason": null,
+        "error": null,
+        "event": "invoice_created",
+        "ts": "2026-11-16T10:22:16.497Z",
+        "device_id": "fecff0e1cdedaa6671c217fa43c62a2daa1e57fc10bdcb71f2e9bade70d4fad0",
+        "session_id": "fe9bc390-094c-451b-b13a-4a52cb44e445",
+        "bytes_used": 0,
+        "allowance_bytes": 0
+      },
+      {
+        "invoice": "fibt1474571pcg7uy03dewgfw0pmm6vk6mpt3rjd2889wwzxvrfcw3hyqn00nwdrkyx5tsnu5lys4uxx5fy6vtuan5cwkycqk20e7a4jknytfzc9sh5mnt6lzjmzhl8fwel4qnqk5zzj9jnuywqutdut5qxt4ckgf5v2w8z36xjjv4shdhq0h5gyjqtr8e9w03m7pjfpefwmg4szwn4xmnqz365utz3x8ua0uh3y9yzvmhx4m0tz8rqqde52hrjt5wjnh0x3lvzcgeu9zw200rkdurv62rened2nhrjvgm7h5xf0d7a3wm5pqlzn48dqh73ne2dxqfj2jtahc99s5m2dug88q3qp2llesz",
+        "payment_hash": "0xc515992392264e204bec31bf2d688e5401476d7a2b24e1754f90cc7c4888a183",
+        "preimage": "0x982a61f4d8eca8990cdb68df5bf2a2f786946c75460b56c19055ab605592055d",
+        "hash_algorithm": "sha256",
+        "amount_shannons": "147457",
+        "t_invoice_created_ms": 1794824536497,
+        "t_paid_seen_ms": 1794824536691,
+        "t_exhausted_ms": null,
+        "t_gate_closed_ms": null,
+        "cutoff_reason": null,
+        "error": null,
+        "event": "invoice_paid",
+        "ts": "2026-11-16T10:22:16.691Z",
+        "device_id": "fecff0e1cdedaa6671c217fa43c62a2daa1e57fc10bdcb71f2e9bade70d4fad0",
+        "session_id": "fe9bc390-094c-451b-b13a-4a52cb44e445",
+        "bytes_used": 0,
+        "allowance_bytes": 2097152
+      },
+      {
+        "invoice": null,
+        "payment_hash": null,
+        "preimage": null,
+        "hash_algorithm": null,
+        "amount_shannons": null,
+        "t_invoice_created_ms": null,
+        "t_paid_seen_ms": null,
+        "t_exhausted_ms": null,
+        "t_gate_closed_ms": null,
+        "cutoff_reason": null,
+        "error": null,
+        "event": "gate_opened",
+        "ts": "2026-11-16T10:22:17.883Z",
+        "device_id": "fecff0e1cdedaa6671c217fa43c62a2daa1e57fc10bdcb71f2e9bade70d4fad0",
+        "session_id": "fe9bc390-094c-451b-b13a-4a52cb44e445",
+        "bytes_used": 0,
+        "allowance_bytes": 2097152
+      },
+      {
+        "invoice": null,
+        "payment_hash": null,
+        "preimage": null,
+        "hash_algorithm": null,
+        "amount_shannons": null,
+        "t_invoice_created_ms": null,
+        "t_paid_seen_ms": null,
+        "t_exhausted_ms": 1794824539735,
+        "t_gate_closed_ms": null,
+        "cutoff_reason": null,
+        "error": null,
+        "event": "grace_started",
+        "ts": "2026-11-16T10:22:19.736Z",
+        "device_id": "fecff0e1cdedaa6671c217fa43c62a2daa1e57fc10bdcb71f2e9bade70d4fad0",
+        "session_id": "fe9bc390-094c-451b-b13a-4a52cb44e445",
+        "bytes_used": 2421760,
+        "allowance_bytes": 2097152
+      },
+      {
+        "invoice": "fibt1474571pcg7uy03dewgfw0pmm6vhrpm2yqq27sq3q5cu7zlvz238f92ujhpjp334a3qk9ja3tr4cq3gtslj6zdft8mnh9wu38pjxuem8pq28xr96hlexn52d0cj7y0vvn83wh0fz3kv2dh3mqqpu77un3f0mjpgyx0z3nzjdvr47vkv3jek8yjn5m40mzy3sh059wyz50c6d96kzutf6hls3w5kr0svtp5xdpvmsvzwu5suqjz0vqv2mc7jjkpa2m2tc6cpgx0c38q8xwe4z66m0a9cp5qg985uhj9qd5e6k8p37znfnjyphtujjsalet5c5ry7ke5krvmh0s82r2fte6atcqf2ylf6",
+        "payment_hash": "0xb0d8fbeee8766d7dcade730d115395aca459f6afda656746c9ca1d0606cedb0d",
+        "preimage": null,
+        "hash_algorithm": "sha256",
+        "amount_shannons": "147457",
+        "t_invoice_created_ms": 1794824540404,
+        "t_paid_seen_ms": null,
+        "t_exhausted_ms": null,
+        "t_gate_closed_ms": null,
+        "cutoff_reason": null,
+        "error": null,
+        "event": "invoice_created",
+        "ts": "2026-11-16T10:22:20.404Z",
+        "device_id": "fecff0e1cdedaa6671c217fa43c62a2daa1e57fc10bdcb71f2e9bade70d4fad0",
+        "session_id": "fe9bc390-094c-451b-b13a-4a52cb44e445",
+        "bytes_used": 2421760,
+        "allowance_bytes": 2097152
+      },
+      {
+        "invoice": null,
+        "payment_hash": null,
+        "preimage": null,
+        "hash_algorithm": null,
+        "amount_shannons": null,
+        "t_invoice_created_ms": null,
+        "t_paid_seen_ms": null,
+        "t_exhausted_ms": 1794824539735,
+        "t_gate_closed_ms": 1794824552632,
+        "cutoff_reason": "grace_expired",
+        "error": null,
+        "event": "cut",
+        "ts": "2026-11-16T10:22:32.632Z",
+        "device_id": "fecff0e1cdedaa6671c217fa43c62a2daa1e57fc10bdcb71f2e9bade70d4fad0",
+        "session_id": "fe9bc390-094c-451b-b13a-4a52cb44e445",
+        "bytes_used": 5204992,
+        "allowance_bytes": 2097152
+      },
+      {
+        "invoice": "fibt1474571pcg7uy03dewgfw0pmm6vkdwvxelhc74ann765vpz3dsq8uglnts8szkqtm7t3rds7490zkusnp6jxj2przq4ysclce25x2fztf42svxzjvw8g3e9pdz2teu5y9em7r4jrvvda5z3ahx44umx684u8t8ztd8ytj95ax36es9kh7kd9twkpuup5e94rq55v882qx2fc7z72rhrhtm2kfk474u8vdxthn8nadxge9h5xckxvq5sgqwtnz9nddwcllr9tz0vnm9ldw9nyqjcyzkvhlk2a0enn2ykesfztk2ae0wf034yhnx7lq0d9qhpt0m7ulq036r33l7gcgugnkrxcqfxvzc3",
+        "payment_hash": "0x7854e52706c2072bec1860551b283b289b9e4f2185f5beb3c6d2667694a2940f",
+        "preimage": null,
+        "hash_algorithm": "sha256",
+        "amount_shannons": "147457",
+        "t_invoice_created_ms": 1794824553283,
+        "t_paid_seen_ms": null,
+        "t_exhausted_ms": null,
+        "t_gate_closed_ms": null,
+        "cutoff_reason": null,
+        "error": null,
+        "event": "invoice_created",
+        "ts": "2026-11-16T10:22:33.283Z",
+        "device_id": "fecff0e1cdedaa6671c217fa43c62a2daa1e57fc10bdcb71f2e9bade70d4fad0",
+        "session_id": "59aebd14-596f-4cfb-ab31-448a59e56349",
+        "bytes_used": 0,
+        "allowance_bytes": 0
+      }
+    ]
+  }
+]

@@ -1,0 +1,12 @@
+[
+  {
+    "channel": "simulated phone's wallet (second FNN v0.9.1, box/sim/payer.sh) -> box FNN, private one-way; drained by scenario 6",
+    "tx_hash": "0x70059b2eeb4e9557efef37263dfe46e5dc4e2bba5345d6b1be58162c74e84393",
+    "payer_funding_ckb": null
+  },
+  {
+    "channel": "simulated phone's wallet -> box FNN, private one-way (200 CKB funded); used by the scenario 2 and 3 reruns",
+    "tx_hash": "0xf7ae9938a3bfea5abcad0434cb4a46844410b37d84994c04fd39021a39fefde8",
+    "payer_funding_ckb": 200
+  }
+]
