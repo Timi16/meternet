@@ -15,3 +15,10 @@ logs/
 
 # gateway test content, made by deploy/server/sync-content.sh
 content/
+
+# the hotspot box: certificates and keys (box/certs.sh), its settings, and
+# its data (FNN's testnet key, meterd's logs and paid credit)
+box/certs/
+box/certs-staging/
+box/box.env
+box/data/

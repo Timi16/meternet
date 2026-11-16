@@ -1,0 +1,63 @@
+# The hotspot box's front door (docker-compose.yml, service "caddy").
+# BOX_FQDN comes from box/.env; its certificate from box/certs (box/certs.sh,
+# Let's Encrypt over DuckDNS DNS-01), so Caddy never needs to reach ACME.
+# On the hotspot, the box's dnsmasq answers BOX_FQDN with the box's own
+# address, so a phone that hasn't paid reaches all of this through openNDS's
+# always-open router ports (443) and the extra ones in opennds.conf (8080, 8443).
+
+{
+	auto_https disable_redirects
+	servers {
+		protocols h1 h2
+	}
+}
+
+(box_tls) {
+	tls /certs/certificates/{$BOX_FQDN}.crt /certs/certificates/{$BOX_FQDN}.key
+}
+
+# openNDS sends an unpaid phone's plain-HTTP requests to its FAS port, 8080
+# (captive-portal checks included): on to the HTTPS portal.
+http://:8080 {
+	redir https://{$BOX_FQDN}/ 302
+}
+
+# The browser wallet (fiber-js) dials /dns4/BOX_FQDN/tcp/8443/wss; FNN takes
+# WebSocket on its P2P port, as on the public server.
+{$BOX_FQDN}:8443 {
+	import box_tls
+	reverse_proxy 127.0.0.1:8228
+}
+
+{$BOX_FQDN} {
+	import box_tls
+	header {
+		# fiber-js needs SharedArrayBuffer: cross-origin isolation.
+		Cross-Origin-Opener-Policy "same-origin"
+		Cross-Origin-Embedder-Policy "require-corp"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+		Cache-Control "no-cache"
+	}
+
+	# meterd in hotspot mode (127.0.0.1:8400). It knows each phone by its
+	# address on the Wi-Fi, from X-Forwarded-For, which Caddy sets itself.
+	handle /api/* {
+		reverse_proxy 127.0.0.1:8400
+	}
+
+	# The wallet's CKB testnet RPC, through the box, so an unpaid phone never
+	# needs anything beyond the box (the walled garden).
+	handle_path /ckb-rpc* {
+		reverse_proxy https://testnet.ckbapp.dev {
+			header_up Host testnet.ckbapp.dev
+		}
+	}
+
+	handle {
+		encode zstd gzip
+		root * /srv/web
+		rewrite / /portal.html
+		file_server
+	}
+}

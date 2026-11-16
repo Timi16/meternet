@@ -1,12 +1,62 @@
-# Placeholder only. This file is not runnable yet.
-# No images, ports or flags are listed because none have been verified.
+# MeterNet hotspot box on a Linux laptop (CKB testnet only).
+#
+#   cp box/box.env.example box/box.env      # then fill it in
+#   box/certs.sh                            # once: the box's HTTPS certificate
+#   docker compose --profile wifi up        # with the laptop's Wi-Fi card
+#   docker compose up                       # without (bring your own AP)
+#
+# Every service uses host networking: openNDS guards the Wi-Fi interface with
+# nftables, and Caddy, FNN and meterd talk over localhost. Data stays in
+# box/data (FNN's testnet key, meterd's logs and paid credit), ignored by git.
+# Full steps: box/README.md.
+
+name: meternet-box
 
 services:
+  # The box's own Fiber node: pinned FNN release, unpatched. RPC on
+  # 127.0.0.1:8227; P2P/WebSocket on 8228, reached by phones as wss on 8443.
   fnn:
-    # TODO week 1: native Fiber Network Node on CKB testnet (image/build, config, data volume, RPC + P2P ports)
+    build: { context: ., dockerfile: box/linux/fnn.Dockerfile }
+    network_mode: host
+    env_file: box/box.env
+    volumes:
+      - ./box/data/fnn:/data
+    restart: unless-stopped
 
-  meterd:
-    # TODO week 1: build from ./meterd; needs FNN RPC URL and access to ndsctl on the host
+  # openNDS (captive portal and per-phone firewall) + dnsmasq (DHCP, DNS) +
+  # meterd in hotspot mode (127.0.0.1:8400): one container, because meterd
+  # drives openNDS through ndsctl's local socket.
+  box:
+    build: { context: ., dockerfile: box/linux/Dockerfile }
+    network_mode: host
+    cap_add: [NET_ADMIN, NET_RAW]
+    env_file: box/box.env
+    environment:
+      BOX_RPC: http://127.0.0.1:8227
+      LISTEN_HOST: 127.0.0.1
+      LOG_DIR: /data/logs
+      STATE_DIR: /data/state
+    volumes:
+      - ./box/data/box:/data
+      - /dev/log:/dev/log # openNDS logs only to syslog
+    depends_on: [fnn]
+    restart: unless-stopped
 
-  opennds:
-    # TODO week 1: openNDS + FAS; likely needs host networking and the Wi-Fi interface, may stay on the host instead
+  # HTTPS portal (443), the wallet's wss (8443), the walled-garden CKB RPC
+  # proxy, and openNDS's redirect target (8080).
+  caddy:
+    build: { context: ., dockerfile: box/linux/caddy.Dockerfile }
+    network_mode: host
+    env_file: box/box.env
+    volumes:
+      - ./box/certs:/certs:ro
+    restart: unless-stopped
+
+  # The "MeterNet-demo" access point on the laptop's Wi-Fi card, and NAT.
+  wifi:
+    profiles: [wifi]
+    build: { context: ., dockerfile: box/linux/wifi.Dockerfile }
+    network_mode: host
+    privileged: true
+    env_file: box/box.env
+    restart: unless-stopped
